@@ -3,7 +3,7 @@ from bpy.types import (Panel, Operator)
 bl_info = {"name": "Tools Panel",
            "description": "tools",
            "author": "Morphin",
-           "version": (0, 0, 1),
+           "version": (0, 0, 2),
            "blender": (2, 80, 0),
            "location": "View3d > Properties > View > Pixel",
            "warning": "",
@@ -11,8 +11,8 @@ bl_info = {"name": "Tools Panel",
            "tracker_url": "",
            "category": "3D View", }
   
-
-class my_properties(bpy.types.PropertyGroup):
+#   Custom properties
+class pixel_properties(bpy.types.PropertyGroup):
     
     tex_size : bpy.props.EnumProperty(
         name = 'Texture Dimentions', 
@@ -29,26 +29,84 @@ class my_properties(bpy.types.PropertyGroup):
         default = '64'
         )
         
+#   Functions
+def optimize(self, context):
+    """Dissolves inner faces, welds double vertices and sets mesh sharp"""
+    mod = context.object.mode
+    bpy.ops.object.mode_set_with_submode(mode='EDIT')
+    
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.dissolve_limited()
+    bpy.ops.mesh.remove_doubles()
+    bpy.ops.mesh.normals_tools(mode='RESET')
+    bpy.ops.mesh.mark_sharp(clear=True)
+    bpy.ops.mesh.faces_shade_flat()
+
+    bpy.ops.object.mode_set_with_submode(mode=mod)
+    
+def unwrap(self, context):
+    mod = context.object.mode
+    bpy.ops.object.mode_set_with_submode(mode='EDIT')
+    
+    bpy.ops.mesh.select_mode(type="EDGE")
+    bpy.ops.mesh.select_all(action = 'DESELECT')
+    
+    seams = bpy.ops.mesh.edges_select_sharp()
+    bpy.ops.mesh.mark_seam(clear=False)
+
+    #unwrap
+    bpy.ops.mesh.select_all(action = 'SELECT')
+    bpy.ops.uv.unwrap(method='ANGLE_BASED', margin=0)
+
+    
+    bpy.ops.object.mode_set_with_submode(mode=mod)
+    
+def create_mat(self,context):
+    test_mat = bpy.data.materials.new(name="Test Material")
+    test_mat.use_nodes = True
+    test_mat.use_fake_user = True
+    
+    #test texture
+    principled_node = test_mat.node_tree.nodes.get('Principled BSDF')
+    test_image_node = test_mat.node_tree.nodes.new("ShaderNodeTexImage")
+    test_image_node.location = (-350, 200)
+        
+    link  = test_mat.node_tree.links.new
+    link(test_image_node.outputs[0], principled_node.inputs[0])
+    test_image_node.interpolation = 'Closest'
+    
+    #bake texture
+    test_image_node = test_mat.node_tree.nodes.new("ShaderNodeTexImage")
+    test_image_node.location = (-350, 800)
+
+    
+    return test_mat
+
+
+
+
+
 
 #   Operators
-
 class MESH_OT_optimize(Operator):
-    """Limited dissolve selected objects"""
+    """Limited dissolve, weld and set sharp selected objects"""
     bl_label = "Optimize"
     bl_idname = "mesh.optimize"
     bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
     def poll(cls, context):
-        return context.area.type == 'VIEW_3D' and context.active_object.type == 'MESH' and context.mode == 'OBJECT' and context.active_object.select_get()
+        if bpy.context.active_object is None:
+            return False
+        
+        return (context.area.type == 'VIEW_3D' and 
+                context.active_object.select_get() and
+                context.active_object.type == 'MESH' 
+                )
     
     def execute(self, context):
-        
-        bpy.ops.object.modifier_add(type='DECIMATE')
-        bpy.context.object.modifiers["Decimate"].decimate_type = 'DISSOLVE'
-        bpy.ops.object.make_links_data(type='MODIFIERS')
-        bpy.ops.object.convert(target='MESH')
-        
+        optimize(self, context)
+       
         return {'FINISHED'}
 
 class MESH_OT_unwrap(Operator):
@@ -59,23 +117,16 @@ class MESH_OT_unwrap(Operator):
     
     @classmethod
     def poll(cls, context):
-        return context.area.type == 'VIEW_3D' and context.active_object.type == 'MESH' and context.active_object.select_get()
+        if bpy.context.active_object is None:
+            return False
+        
+        return (context.area.type == 'VIEW_3D' and 
+                context.active_object.type == 'MESH' and 
+                context.active_object.select_get()
+                )
             
     def execute(self, context):
-        mod = context.object.mode
-        bpy.ops.object.mode_set_with_submode(mode='EDIT')
-        
-        bpy.ops.mesh.select_mode(type="EDGE")
-        bpy.ops.mesh.select_all(action = 'DESELECT')
-        
-        seams = bpy.ops.mesh.edges_select_sharp()
-        bpy.ops.mesh.mark_seam(clear=False)
-
-        #unwrap
-        bpy.ops.uv.unwrap(method='ANGLE_BASED', margin=0)
-
-        
-        bpy.ops.object.mode_set_with_submode(mode=mod)
+        unwrap(self,context)
     
         return {'FINISHED'}
 
@@ -87,38 +138,32 @@ class MESH_OT_test_material(Operator):
     
     @classmethod
     def poll(cls, context):
-        return context.area.type == 'VIEW_3D' and context.active_object.type == 'MESH' and context.active_object.select_get()
+        if bpy.context.active_object is None:
+            return False
+        
+        return (context.area.type == 'VIEW_3D' and
+                context.active_object.type == 'MESH' and 
+                context.active_object.select_get()
+                )
             
     def execute(self, context):
+                
+        if bpy.data.materials.find("Test Material") < 0:
+            #create test material
+            test_mat = create_mat(self,context)
+        else: test_mat = bpy.data.materials.get("Test Material")
         
-        #create test material
-        test_mat = bpy.data.materials.new(name="Test Material")
-        test_mat.use_nodes = True
-        test_mat.use_fake_user = True
-        
-        
-        principled_node = test_mat.node_tree.nodes.get('Principled BSDF')
-        test_image_node = test_mat.node_tree.nodes.new("ShaderNodeTexImage")
-        test_image_node.location = (-350, 200)
-        
-        link  = test_mat.node_tree.links.new
-        link(test_image_node.outputs[0], principled_node.inputs[0])
-        test_image_node.interpolation = 'Closest'
-        
+            
         #append to selected objects
         for ob in bpy.context.selected_objects :
             ob.active_material = test_mat
-                
-        #activeObject = bpy.context.active_object
-        
-
-    
+                   
         return {'FINISHED'}
     
     
 class MESH_OT_test_texture(Operator):
     """Add test texture"""
-    bl_label = "Test Texture"
+    bl_label = "Set Texture"
     bl_idname = "mesh.test_texture"
     bl_options = {'REGISTER', 'UNDO'}
     
@@ -140,6 +185,9 @@ class MESH_OT_test_texture(Operator):
     
     @classmethod
     def poll(cls, context):
+        if bpy.context.active_object is None:
+            return False
+        
         return context.area.type == 'VIEW_3D' and context.active_object.type == 'MESH' and context.active_object.select_get()
             
     
@@ -147,18 +195,33 @@ class MESH_OT_test_texture(Operator):
         scene = context.scene
         pixel_tool = scene.pixel_tool
         self.size = pixel_tool.tex_size
-            
+                    
         return self.execute(context)
         
     def execute(self, context):
-        bpy.ops.image.new(name="Test x" + self.size, width=int(self.size), height=int(self.size), generated_type='COLOR_GRID')
+        #test texture add
+        tex_name = "Test x" + self.size
+        
+        if bpy.data.images.find(tex_name) < 0:
+            texture = bpy.ops.image.new(name= tex_name, width=int(self.size), height=int(self.size), generated_type='COLOR_GRID')
+        
+        test_mat = bpy.data.materials["Test Material"]
+        test_image_node = test_mat.node_tree.nodes["Image Texture"]
+        test_image_node.image = bpy.data.images[tex_name]
+        
+        #bake texture add
+        texture = bpy.data.images.new(name= 'Bake', width=int(self.size), height=int(self.size), alpha=True)
+        texture.generated_color = (0, 0, 0, 0)
+
+        test_image_node = test_mat.node_tree.nodes["Image Texture.001"]
+        test_image_node.image = texture
+        test_image_node
         
         return {'FINISHED'}
 
 
-#     Panels
-
-class VIEW3D_PT_Pixel(Panel):
+#   Panels
+class VIEW3D_PT_Pixel_Model(Panel):
     """Creates a Panel in the scene context of the 3D view N panel"""
     
     bl_label = "Model"
@@ -175,21 +238,21 @@ class VIEW3D_PT_Pixel(Panel):
 
           
         layout.operator("mesh.optimize")
-        layout.operator("mesh.unwrap")
         layout.operator("mesh.test_material")
         
         row = layout.row(align = True)
         row.operator("mesh.test_texture")
         row.prop(pixel_tool, 'tex_size', text='')
+        layout.operator("mesh.unwrap")
         
         
         
         
                 
-        
+#   Registration
 classes = (
-    my_properties,
-    VIEW3D_PT_Pixel,
+    pixel_properties,
+    VIEW3D_PT_Pixel_Model,
     MESH_OT_optimize,
     MESH_OT_unwrap,
     MESH_OT_test_material,
@@ -201,7 +264,7 @@ classes = (
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-        bpy.types.Scene.pixel_tool = bpy.props.PointerProperty(type = my_properties)
+        bpy.types.Scene.pixel_tool = bpy.props.PointerProperty(type = pixel_properties)
 
 
 def unregister():
