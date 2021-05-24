@@ -96,6 +96,7 @@ def create_mat(self,context):
     #bake texture
     test_image_node = test_mat.node_tree.nodes.new("ShaderNodeTexImage")
     test_image_node.location = (-350, 800)
+    test_image_node.interpolation = 'Closest'
 
     
     return test_mat
@@ -274,7 +275,7 @@ class MESH_OT_test_texture(Operator):
 
         test_image_node = test_mat.node_tree.nodes["Image Texture.001"]
         test_image_node.image = texture
-        test_image_node
+        test_image_node         #???
         
         if addon_installed('Texel_Density'):
             scene.td.custom_width = str(scene.pixel_tool.tex_size_custom_x)
