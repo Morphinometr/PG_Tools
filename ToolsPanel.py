@@ -36,6 +36,7 @@ class pixel_properties(bpy.types.PropertyGroup):
         items = [('10', '10 px/m', ''),
                  ('16', '16 px/m', ''),
                  ('32', '32 px/m', ''),
+                 ('1000', '1000 px/m', ''),
                  ('custom', 'Custom', ''),
                 ],
         default = '10'
@@ -102,21 +103,19 @@ def create_mat(self,context):
     return test_mat
 
 def texture_pixel_filter(self, context):
-    materials = []
-    textures = []
-    
-    for ob in context.selected_objects:
-        for slot in ob.material_slots:
-            if slot.material not in materials:
-                materials.append(slot.material) 
-
-    for mat in materials:
-        for node in mat.node_tree.nodes:
-             if node.type == 'TEX_IMAGE':
-                 textures.append(node)
+    materials = get_materials(context)
+    textures = get_textures(materials)
            
     for tex in textures:   
          tex.interpolation = 'Closest'
+
+def reload_textures(self, context):
+    materials = get_materials(context)
+    textures = get_textures(materials)
+    
+    for tex in textures:
+        tex.image.reload()
+
 
 def addon_installed(name):
     addons = bpy.context.preferences.addons.keys()
@@ -125,6 +124,22 @@ def addon_installed(name):
             return True
     return False
 
+def get_materials(context):
+    materials = []
+    
+    for ob in context.selected_objects:
+        for slot in ob.material_slots:
+            if slot.material not in materials:
+                materials.append(slot.material) 
+    return materials
+    
+def get_textures(materials):
+    textures = []
+    for mat in materials:
+        for node in mat.node_tree.nodes:
+             if node.type == 'TEX_IMAGE':
+                 textures.append(node)
+    return textures
 
 
 
@@ -302,6 +317,27 @@ class MESH_OT_texture_pixel_filter(Operator):
         texture_pixel_filter(self, context)
         
         return {'FINISHED'}
+ 
+class MESH_OT_reload_textures(Operator):
+    """reload textures"""
+    bl_label = "Reload Textures"
+    bl_idname = "mesh.reload_textures"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    @classmethod
+    def poll(cls, context):
+#        if bpy.context.active_object is None:
+#            return False
+        
+        return (context.area.type == 'VIEW_3D' and 
+                context.active_object.type == 'MESH' and 
+                context.active_object.select_get()
+                )
+            
+    def execute(self, context):
+        reload_textures(self,context)
+    
+        return {'FINISHED'}
     
 #   Interaraction with texel density addon
 
@@ -316,6 +352,7 @@ class MESH_OT_set_tex_desity(Operator):
         items = [('10', '10 px/m', ''),
                  ('16', '16 px/m', ''),
                  ('32', '32 px/m', ''),
+                 ('1000', '1000 px/m', ''),
                  ('custom', 'custom', ''),
                 ],
         default = '10'
@@ -403,6 +440,8 @@ class VIEW3D_PT_Pixel_Model(Panel):
             
         else:
             box.label(text = '"Texel Density" addon not found')
+            
+        layout.operator("mesh.reload_textures")
         
         
         
@@ -419,6 +458,7 @@ classes = (
     MESH_OT_test_texture,
     MESH_OT_texture_pixel_filter,
     MESH_OT_set_tex_desity,
+    MESH_OT_reload_textures,
     
     )
                     
