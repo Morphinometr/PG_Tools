@@ -39,7 +39,7 @@ class pixel_properties(bpy.types.PropertyGroup):
                  ('1000', '1000 px/m', ''),
                  ('custom', 'Custom', ''),
                 ],
-        default = '10'
+        default = '16'
         )
         
     tex_size_custom_x : bpy.props.IntProperty(name="Custom texture size X", min = 1, default = 64 )
@@ -84,6 +84,8 @@ def create_mat(self,context):
     test_mat = bpy.data.materials.new(name="Test Material")
     test_mat.use_nodes = True
     test_mat.use_fake_user = True
+    test_mat.node_tree.nodes["Principled BSDF"].inputs[5].default_value = 0
+
     
     #test texture
     principled_node = test_mat.node_tree.nodes.get('Principled BSDF')
@@ -105,6 +107,10 @@ def create_mat(self,context):
 def texture_pixel_filter(self, context):
     materials = get_materials(context)
     textures = get_textures(materials)
+    
+    for mat in materials:
+        mat.node_tree.nodes["Principled BSDF"].inputs[5].default_value = 0
+
            
     for tex in textures:   
          tex.interpolation = 'Closest'
@@ -127,10 +133,15 @@ def addon_installed(name):
 def get_materials(context):
     materials = []
     
+    if context.active_object is not None:
+        for slot in context.active_object.material_slots:
+             materials.append(slot.material)
+    
     for ob in context.selected_objects:
         for slot in ob.material_slots:
             if slot.material not in materials:
                 materials.append(slot.material) 
+    
     return materials
     
 def get_textures(materials):
@@ -140,7 +151,6 @@ def get_textures(materials):
              if node.type == 'TEX_IMAGE':
                  textures.append(node)
     return textures
-
 
 
     
@@ -290,7 +300,7 @@ class MESH_OT_test_texture(Operator):
 
         test_image_node = test_mat.node_tree.nodes["Image Texture.001"]
         test_image_node.image = texture
-        test_image_node         #???
+        #test_image_node         #???
         
         if addon_installed('Texel_Density'):
             scene.td.custom_width = str(scene.pixel_tool.tex_size_custom_x)
@@ -306,12 +316,9 @@ class MESH_OT_texture_pixel_filter(Operator):
     
     @classmethod
     def poll(cls, context):
-        if len(context.selected_objects) < 1:
+        if bpy.context.active_object is None and len(context.selected_objects) < 1:
             return False
-        
-        return (context.area.type == 'VIEW_3D' 
-                
-                )
+        return True
             
     def execute(self, context):
         texture_pixel_filter(self, context)
@@ -326,13 +333,14 @@ class MESH_OT_reload_textures(Operator):
     
     @classmethod
     def poll(cls, context):
-#        if bpy.context.active_object is None:
-#            return False
+        if bpy.context.active_object is None and len(context.selected_objects) < 1:
+            return False
+        return True
         
-        return (context.area.type == 'VIEW_3D' and 
-                context.active_object.type == 'MESH' and 
-                context.active_object.select_get()
-                )
+#        return (context.area.type == 'VIEW_3D' and 
+#                context.active_object.type == 'MESH' and 
+#                context.active_object.select_get()
+#                )
             
     def execute(self, context):
         reload_textures(self,context)
@@ -355,7 +363,7 @@ class MESH_OT_set_tex_desity(Operator):
                  ('1000', '1000 px/m', ''),
                  ('custom', 'custom', ''),
                 ],
-        default = '10'
+        default = '16'
         )
         
     density_custom : bpy.props.FloatProperty(name="Custom Pixel Density") 
@@ -388,16 +396,151 @@ class MESH_OT_set_tex_desity(Operator):
         bpy.ops.object.texel_density_set()
 
         return {'FINISHED'}
-                
+            
+               
+#   Layout
+
+class MESH_OT_fix_import(Operator):
+    """Fix imported Rig"""
+    bl_label = "Fix Imported Rig"
+    bl_idname = "mesh.fix_import"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+#    @classmethod
+#    def poll(cls, context):
+#        if bpy.context.active_object is None:
+#            return False
+#        
+#        return (context.area.type == 'VIEW_3D' and 
+#                context.active_object.type == 'ARMATURE' and 
+#                context.active_object.select_get()
+#                )
+            
+    def execute(self, context):
+        scene = context.scene
+        collection = context.collection
+        
+        emptys = []
+        meshes = []
+        armature = None
+        
+        #lookup for imported objects
+        for name, id in collection.objects.items():
+            if id.type == 'EMPTY':
+                emptys.append(id)
+            elif id.type == 'ARMATURE':
+                armature = id          
+            elif id.type == 'MESH':
+                meshes.append(id)
+        
+        if armature == None:
+            self.report({'ERROR'}, 'Armature not found')
+            return {'CANCELLED'}
+        
+        if armature.parent == None:
+            self.report({'ERROR'}, 'Armature has no parent')
+            return {'CANCELLED'} 
+        
+        #Temp
+        '''TODO: Make "tag" variable'''
+        tag = armature.name
+        
+        #create trash collection        
+        trash_col = bpy.data.collections.new('trash')
+        collection.children.link(trash_col)        
+              
+        context.view_layer.objects.active = armature  #Set armature as Active Object
+        
+        #for Blender exporter 
+        if armature.data.bones.find(tag) == 0:
+             armature.data.bones[tag].name += ' 1'        
+
+        #go to Edit Mode
+        mod = context.object.mode
+        bpy.ops.object.mode_set_with_submode(mode='EDIT')
+
+        #create a bone in the location anorientation of Armature parent
+        bpy.ops.armature.bone_primitive_add(name=tag)
+        armature.data.edit_bones[tag].matrix = armature.parent.matrix_world
+        armature.data.edit_bones[tag].length = 0.1/context.scene.unit_settings.scale_length
+        
+        #parent all bones without parent to newely created bone
+        for name, id in armature.data.bones.items():
+            if id.name == tag:
+                #print(name)
+                continue
+            if id.parent == None:
+                armature.data.edit_bones[name].parent = armature.data.edit_bones[tag]
+                #print(name)
+        
+        #exit Edit Mode
+        bpy.ops.object.mode_set_with_submode(mode=mod)
+    
+        
+        #delete keyframes from armature object
+        for f in range(int(armature.animation_data.action.frame_range[0]), int(armature.animation_data.action.frame_range[1]+1)):
+            armature.keyframe_delete('location', frame=f)
+            armature.keyframe_delete('rotation_quaternion', frame=f)
+            armature.keyframe_delete('scale', frame=f)
+             
+        #clear parenting and keep location
+        parent = armature.parent
+        matrix = armature.matrix_world
+        armature.parent = None
+        armature.matrix_world = matrix
+        
+        #move to trash collection
+        trash_col.objects.link(parent)
+        collection.objects.unlink(parent)
+        
+        emptys.remove(parent) #remove solved empty from the list
+        
+        '''TODO: Hide Trash collection in outliner'''
+        #context.view_layer.layer_collection.children[trash_col.name].exclude = True
+        #trash_col.hide_render = True
+        
+       
+       
+        #Group Bone Channels
+#        armature.animation_data.action.groups.new('1')
+#        D.objects['royal_cobra_spirit'].animation_data.action.groups['New Group'].channels.items()
+        
+        
+        
+
+        
+
+    
+        return {'FINISHED'}
+
+###########################   Panels  ################################
+
+#   Layout
+       
+class VIEW3D_PT_pixel_layout(Panel):
+    """Creates a Panel in the scene context of the 3D view N panel"""
+    
+    bl_label = "Layout"
+    bl_idname = "VIEW3D_PT_pixel_layout"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "Pixel"
+    
+    
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        
+        layout.operator("mesh.fix_import")
 
 
-#   Panels
+#   Modeling
 
-class VIEW3D_PT_Pixel_Model(Panel):
+class VIEW3D_PT_pixel_modeling(Panel):
     """Creates a Panel in the scene context of the 3D view N panel"""
     
     bl_label = "Modeling"
-    bl_idname = "VIEW3D_PT_Pixel"
+    bl_idname = "VIEW3D_PT_pixel_modeling"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Pixel"
@@ -443,15 +586,16 @@ class VIEW3D_PT_Pixel_Model(Panel):
             
         layout.operator("mesh.reload_textures")
         
-        
-        
+
+
         
                 
 #   Registration
 
 classes = (
     pixel_properties,
-    VIEW3D_PT_Pixel_Model,
+    VIEW3D_PT_pixel_modeling,
+    VIEW3D_PT_pixel_layout,
     MESH_OT_optimize,
     MESH_OT_unwrap,
     MESH_OT_test_material,
@@ -459,6 +603,8 @@ classes = (
     MESH_OT_texture_pixel_filter,
     MESH_OT_set_tex_desity,
     MESH_OT_reload_textures,
+    MESH_OT_fix_import,
+    
     
     )
                     
