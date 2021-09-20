@@ -5,7 +5,7 @@ bl_info = {"name": "Tools Panel",
            "author": "Morphin",
            "version": (0, 0, 2),
            "blender": (2, 80, 0),
-           "location": "View3d > Properties > View > Pixel",
+           "location": "View3d > Properties > View > PixelGun",
            "warning": "",
            "wiki_url": "",
            "tracker_url": "",
@@ -660,7 +660,7 @@ class VIEW3D_PT_pixel_layout(Panel):
     bl_idname = "VIEW3D_PT_pixel_layout"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Pixel"
+    bl_category = "PixelGun"
     
     
     def draw(self, context):
@@ -688,7 +688,7 @@ class VIEW3D_PT_pixel_modeling(Panel):
     bl_idname = "VIEW3D_PT_pixel_modeling"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Pixel"
+    bl_category = "PixelGun"
     
     
     def draw(self, context):
@@ -762,9 +762,10 @@ def register():
 
 
 def unregister():
+    del bpy.types.Scene.pixel_tool
     for cls in classes:
         bpy.utils.unregister_class(cls)
-        del bpy.types.Scene.pixel_tool
+        
 
 if __name__ == "__main__":
     register()
