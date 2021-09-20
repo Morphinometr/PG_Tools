@@ -46,6 +46,11 @@ class pixel_properties(bpy.types.PropertyGroup):
     tex_size_custom_y : bpy.props.IntProperty(name="Custom texture size Y", min = 1, default = 64 )
     px_density_custom : bpy.props.FloatProperty(name="Custom Pixel Density", min = 0 )
     
+    weapon_tag : bpy.props.StringProperty(name="Weapon Tag", default = "")
+    weapon_number : bpy.props.StringProperty(name="Weapon Number", default = "")
+    avatar_tag : bpy.props.StringProperty(name="Avatar Tag", default = "")
+    
+    
               
 #   Functions
 
@@ -443,7 +448,13 @@ class MESH_OT_fix_import(Operator):
         
         #Temp
         '''TODO: Make "tag" variable'''
-        tag = armature.name
+        scene.pixel_tool.weapon_tag
+        
+        if scene.pixel_tool.weapon_tag == '':
+            scene.pixel_tool.weapon_tag = armature.name
+        
+        tag = scene.pixel_tool.weapon_tag
+        
         
         #create trash collection        
         trash_col = bpy.data.collections.new('trash')
@@ -505,13 +516,138 @@ class MESH_OT_fix_import(Operator):
 #        armature.animation_data.action.groups.new('1')
 #        D.objects['royal_cobra_spirit'].animation_data.action.groups['New Group'].channels.items()
         
+        return {'FINISHED'}
+    
+    
+#   Combine rigs for presentation
+  
+class MESH_OT_combine_rigs(Operator):
+    """Combine weapon rig (selected) with main avatar rig (active)"""
+    bl_label = "Combine Rigs"
+    bl_idname = "mesh.combine_rigs"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    @classmethod
+    #make sure that there are 2 objects selected, one of with is active and both of them are armatures
+    def poll(cls, context):
+        if bpy.context.active_object is None :
+            return False
+        if len(context.selected_objects) < 2 or len(context.selected_objects) >3:
+            return False
+        for ob in context.selected_objects:
+            if ob.type != 'ARMATURE':
+                return False        
+        return True
+    
+    def execute(self, context):
+        list = context.selected_objects
+        avatar_rig = context.active_object
+        list.remove(avatar_rig)
+        weapon_rig =list[0]
+        
+        #move all bones in weapon rig to 10th layer
+        for bone in weapon_rig.data.bones:
+            bone.layers[10]=True
+            bone.layers[0]=False      
+        
+        #join rigs
+        bpy.ops.object.join()
+        
+        #rotate avatar arms
+        
+        for bone in avatar_rig.data.bones:
+            if bone.name.lower() == 'fps_player_arm_right':
+                weapon_arm_R = bone
+            if bone.name.lower() == 'fps_player_arm_left':
+                weapon_arm_L = bone
+            if bone.name.lower() == 'ctrl_fk_arm_r':
+                avatar_arm_R = bone
+            if bone.name.lower() == 'ctrl_fk_arm_l':
+                avatar_arm_L = bone
         
         
+        #TODO: Make rotations via transform matrix
+        #some dirty code !!!
+        bpy.ops.object.mode_set_with_submode(mode='POSE')
+        for bone in avatar_rig.pose.bones:
+            bone.bone.select = False
+        
+        #right arm rotation
+        avatar_rig.data.bones.active = avatar_rig.pose.bones[weapon_arm_R.name].bone
+        avatar_rig.pose.bones[avatar_arm_R.name].bone.select = True
+        bpy.ops.pose.copy_pose_vis_rot()
+        
+        avatar_rig.pose.bones[weapon_arm_R.name].bone.select = False
+        bpy.ops.transform.rotate(value=-3.14159, orient_axis='X', orient_type='LOCAL')
+        avatar_rig.pose.bones[avatar_arm_R.name].bone.select = False
+        #left arm rotation
+        avatar_rig.data.bones.active = avatar_rig.pose.bones[weapon_arm_L.name].bone
+        avatar_rig.pose.bones[avatar_arm_L.name].bone.select = True
+        bpy.ops.pose.copy_pose_vis_rot()
+        
+        avatar_rig.pose.bones[weapon_arm_L.name].bone.select = False
+        bpy.ops.transform.rotate(value=1.5708, orient_axis='X', orient_type='LOCAL')
+        avatar_rig.pose.bones[avatar_arm_L.name].bone.select = False
+        
+        
+        
+        #constrain weapon arms
+        #right
+        avatar_rig.pose.bones[weapon_arm_R.name].constraints.new('COPY_TRANSFORMS')
+        avatar_rig.pose.bones[weapon_arm_R.name].constraints.active.target = avatar_rig
+        avatar_rig.pose.bones[weapon_arm_R.name].constraints.active.subtarget = 'MCH_arm_R'
 
+
+        #TODO: Make choice
+        #left
+        avatar_rig.pose.bones[weapon_arm_L.name].constraints.new('COPY_TRANSFORMS')
+        avatar_rig.pose.bones[weapon_arm_L.name].constraints.active.target = avatar_rig
+        avatar_rig.pose.bones[weapon_arm_L.name].constraints.active.subtarget = 'MCH_arm_L'
         
+        #parenting weapon root bone to its proper parent in avatar rig
+        bpy.ops.object.mode_set_with_submode(mode='EDIT')
+        
+        character_holder = avatar_rig.data.edit_bones['CharacterHolder']
+        
+        #weap_prefab = character_holder.children[0]
+        for bone in character_holder.children:
+            if bone.name.find('Weapon') > -1:
+                weap_prefab = bone
+                break
+        for bone in weap_prefab.children:
+            if bone.name.find('Weapon') > -1:
+                weapon = bone
+            if bone.name.find('avatar') > -1:
+                avatar = bone
+        for bone in weapon.children:
+            if bone.name.find('Weapon') > -1:
+                inner = bone
+                break
+        
+        weapon_tag = context.scene.pixel_tool.weapon_tag
+        avatar_rig.data.edit_bones[weapon_tag].parent = inner
+        bpy.ops.object.mode_set_with_submode(mode='OBJECT')
+        
+        #rename bones
+        num = context.scene.pixel_tool.weapon_number
+        if context.scene.pixel_tool.weapon_number != '':
+            weap_prefab.name = weap_prefab.name[0:-4] + num
+            weapon.name = weapon.name[0:-4] + num
+            inner.name = inner.name[0:6] + num + inner.name[10:]
+            
+        if context.scene.pixel_tool.avatar_tag != '':
+            avatar.name = context.scene.pixel_tool.avatar_tag
+             
+        #pin weapon mesh to avatar rig
+        weapon_mesh = bpy.data.objects[weapon_tag +'_mesh']
+        if weapon_mesh is not None:
+            weapon_mesh.modifiers[0].object = avatar_rig
+        
+        
+        return {'FINISHED'}
 
     
-        return {'FINISHED'}
+        
 
 ###########################   Panels  ################################
 
@@ -530,8 +666,17 @@ class VIEW3D_PT_pixel_layout(Panel):
     def draw(self, context):
         layout = self.layout
         scene = context.scene
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+        
+        col = layout.column(align=False)
+        
+        col.prop(scene.pixel_tool, "weapon_tag")
+        col.prop(scene.pixel_tool, "weapon_number")
+        col.prop(scene.pixel_tool, "avatar_tag")
         
         layout.operator("mesh.fix_import")
+        layout.operator("mesh.combine_rigs")
 
 
 #   Modeling
@@ -604,6 +749,7 @@ classes = (
     MESH_OT_set_tex_desity,
     MESH_OT_reload_textures,
     MESH_OT_fix_import,
+    MESH_OT_combine_rigs,
     
     
     )
