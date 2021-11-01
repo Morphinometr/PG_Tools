@@ -716,8 +716,53 @@ class PIXEL_OT_combine_rigs(Operator):
         
         return {'FINISHED'}
 
-    
+
+#   Riging
+
+#   Create simple controls
+class PIXEL_OT_simple_controls(Operator):
+    """Create control bones"""
+    bl_label = "Create simple controls"
+    bl_idname = "pixel.create_simple_controls"
+    bl_options = {'REGISTER', 'UNDO'}
+
+#    @classmethod
+#    def poll(cls, context):
+#        if context.preferences.addons['Pixel_Tools-main'].preferences['project_filepath'] == '' :
+#            return False
+
+    def execute(self, context):
+        avatar_rig = context.active_object
+        def_bones = []
+        ctrl_bones = []
+        mod = context.object.mode
         
+        
+        
+        bpy.ops.object.mode_set_with_submode(mode='EDIT')
+        for bone in context.selected_bones:
+            def_bones.append(bone)
+        
+        
+        #Dirty!    
+        bpy.ops.armature.duplicate_move()
+        
+        for bone in context.selected_bones:
+            bone.name = "CTRL_" + bone.name[:-4]
+            ctrl_bones.append(bone)
+            bone.length *= 1.5
+            
+        bpy.ops.object.mode_set_with_submode(mode='POSE')
+        for bone in def_bones:
+            avatar_rig.pose.bones[bone.name].constraints.new('COPY_TRANSFORMS')
+            avatar_rig.pose.bones[bone.name].constraints.active.target = avatar_rig
+            avatar_rig.pose.bones[bone.name].constraints.active.subtarget = 'CTRL_' + bone.name
+            
+        bpy.ops.object.mode_set_with_submode(mode=mod)
+        
+        
+        
+        return {'FINISHED'}
 
 ###########################   Panels  ################################
 
@@ -749,13 +794,13 @@ class VIEW3D_PT_pixel_layout(Panel):
         layout.operator("pixel.fix_import")
         layout.operator("pixel.combine_rigs")
 
-#   Rigging
+#   Riging
        
-class VIEW3D_PT_pixel_rigging(Panel):
+class VIEW3D_PT_pixel_riging(Panel):
     """Creates a Panel in the scene context of the 3D view N panel"""
     
-    bl_label = "Rigging"
-    bl_idname = "VIEW3D_PT_pixel_layout"
+    bl_label = "Riging"
+    bl_idname = "VIEW3D_PT_pixel_riging"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "PixelGun"
@@ -769,7 +814,7 @@ class VIEW3D_PT_pixel_rigging(Panel):
         
         col = layout.column(align=False)
         
-        layout.operator("pixel.import_weapon")
+        layout.operator("pixel.create_simple_controls")
         
 
 #   Modeling
@@ -834,7 +879,7 @@ classes = (
     pixel_properties,
     VIEW3D_PT_pixel_modeling,
     VIEW3D_PT_pixel_layout,
-    VIEW3D_PT_pixel_rigging,
+    VIEW3D_PT_pixel_riging,
     MESH_OT_optimize,
     MESH_OT_unwrap,
     MESH_OT_test_material,
@@ -845,6 +890,7 @@ classes = (
     PIXEL_OT_import_weapon,
     PIXEL_OT_fix_import,
     PIXEL_OT_combine_rigs,
+    PIXEL_OT_simple_controls,
     
     
     )
