@@ -25,10 +25,13 @@ import os
 from bpy.props import (
     BoolProperty,
     PointerProperty,
+    StringProperty,
+    IntProperty
 )
 from bpy.types import (
     PropertyGroup,
     AddonPreferences,
+    Operator
 )
 
 
@@ -45,13 +48,62 @@ bl_info = {
     }
 
 from . import ToolsPanel 
+
+class PixelGunToolsPreferences(AddonPreferences):
+    bl_idname = __package__
+
+    project_filepath: StringProperty(
+        name="PixelGun Project directory",
+        subtype='FILE_PATH',
+    )
+    # number: IntProperty(
+    #     name="Example Number",
+    #     default=4,
+    # )
+    # boolean: BoolProperty(
+    #     name="Example Boolean",
+    #     default=False,
+    # )
+
+    def draw(self, context):
+        layout = self.layout
+        #layout.label(text="This is a preferences view for our add-on")
+        layout.prop(self, "project_filepath")
+        # layout.prop(self, "number")
+        # layout.prop(self, "boolean")
+
+
+class OBJECT_OT_pixelgun_tools_prefs(Operator):
+    """Display preferences"""
+    bl_idname = "object.pixelgun_tools_prefs"
+    bl_label = "Add-on Preferences"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        preferences = context.preferences
+        addon_prefs = preferences.addons[__name__].preferences
+
+        # info = ("Path: %s, Number: %d, Boolean %r" %
+        #         (addon_prefs.filepath, addon_prefs.number, addon_prefs.boolean))
+        info = ("Path: %s" % addon_prefs.project_filepath)
+
+        self.report({'INFO'}, info)
+        print(info)
+
+        return {'FINISHED'}
+
+
     
 def register():
     ToolsPanel.register()
+    bpy.utils.register_class(OBJECT_OT_pixelgun_tools_prefs)
+    bpy.utils.register_class(PixelGunToolsPreferences)
 
 
 def unregister():
     ToolsPanel.unregister()
+    bpy.utils.unregister_class(OBJECT_OT_pixelgun_tools_prefs)
+    bpy.utils.unregister_class(PixelGunToolsPreferences)
 
 
 if __name__ == "__main__":

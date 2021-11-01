@@ -54,6 +54,25 @@ class pixel_properties(bpy.types.PropertyGroup):
               
 #   Functions
 
+def recurLayerCollection(layerColl, collName):
+    """Recursivly transverse layer_collection for a particular name"""
+    found = None
+    if (layerColl.name == collName):
+        return layerColl
+    for layer in layerColl.children:
+        found = recurLayerCollection(layer, collName)
+        if found:
+            return found
+
+##Switching active Collection to active Object selected
+#    obj = bpy.context.object
+#    ucol = obj.users_collection
+#    for i in ucol:
+#        layer_collection = bpy.context.view_layer.layer_collection
+#        layerColl = recurLayerCollection(layer_collection, i.name)
+#        bpy.context.view_layer.active_layer_collection = layerColl
+
+
 def optimize(self, context):
     """Dissolves inner faces, welds double vertices and sets mesh sharp"""
     mod = context.object.mode
@@ -405,10 +424,58 @@ class MESH_OT_set_tex_desity(Operator):
                
 #   Layout
 
-class MESH_OT_fix_import(Operator):
-    """Fix imported Rig"""
+#   Import Weapon
+class PIXEL_OT_import_weapon(Operator):
+    """Import Weapon by its Tag"""
+    bl_label = "Import Weapon"
+    bl_idname = "pixel.import_weapon"
+    bl_options = {'REGISTER', 'UNDO'}
+
+#    @classmethod
+#    def poll(cls, context):
+#        if context.preferences.addons['Pixel_Tools-main'].preferences['project_filepath'] == '' :
+#            return False
+
+    def execute(self, context):
+        scene = context.scene
+        
+        if context.collection != "Weapon":
+            try: 
+                collection = bpy.data.collections['Weapon']
+            except Exception:
+                collection = bpy.data.collections.new('Weapon')
+                bpy.context.scene.collection.children.link(collection)
+                
+        layer_collection = bpy.context.view_layer.layer_collection.children[collection.name]
+        bpy.context.view_layer.active_layer_collection = layer_collection
+        
+        
+        
+        
+        project_path = context.preferences.addons['Pixel_Tools-main'].preferences['project_filepath']
+        weapon_path = project_path + "\\Assets\\Sources\\Models\\Weapons\\" + scene.pixel_tool.weapon_tag + "\\" + scene.pixel_tool.weapon_tag + ".fbx"        
+        textures_path = project_path + "\\Assets\\Sources\\Textures\\maps\\Weapons\\map_weapon\\"
+        
+        bpy.ops.better_import.fbx(filepath=weapon_path, 
+                                  use_auto_bone_orientation=False, 
+                                  use_fix_attributes=True, 
+                                  my_import_normal='Import', 
+                                  use_auto_smooth=False, 
+                                  my_scale=1, 
+                                  use_reset_mesh_origin=False)
+        
+        bpy.ops.file.find_missing_files(directory=textures_path)
+
+        
+        #bpy.context.view_layer.collections.active = bpy.data.collections['Weapon']
+
+        return {'FINISHED'}
+        
+#Solve some bugs of Better FBX importer
+class PIXEL_OT_fix_import(Operator):
+    """Fix imported Weapon Rig"""
     bl_label = "Fix Imported Rig"
-    bl_idname = "mesh.fix_import"
+    bl_idname = "pixel.fix_import"
     bl_options = {'REGISTER', 'UNDO'}
     
 #    @classmethod
@@ -519,12 +586,11 @@ class MESH_OT_fix_import(Operator):
         return {'FINISHED'}
     
     
-#   Combine rigs for presentation
-  
-class MESH_OT_combine_rigs(Operator):
+#   Combine rigs for presentation 
+class PIXEL_OT_combine_rigs(Operator):
     """Combine weapon rig (selected) with main avatar rig (active)"""
     bl_label = "Combine Rigs"
-    bl_idname = "mesh.combine_rigs"
+    bl_idname = "pixel.combine_rigs"
     bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
@@ -571,6 +637,10 @@ class MESH_OT_combine_rigs(Operator):
         bpy.ops.object.mode_set_with_submode(mode='POSE')
         for bone in avatar_rig.pose.bones:
             bone.bone.select = False
+            
+        bpy.data.armatures[avatar_rig.data.name].layers[2] = True
+        bpy.data.armatures[avatar_rig.data.name].layers[10] = True
+        
         
         #right arm rotation
         avatar_rig.data.bones.active = avatar_rig.pose.bones[weapon_arm_R.name].bone
@@ -675,9 +745,32 @@ class VIEW3D_PT_pixel_layout(Panel):
         col.prop(scene.pixel_tool, "weapon_number")
         col.prop(scene.pixel_tool, "avatar_tag")
         
-        layout.operator("mesh.fix_import")
-        layout.operator("mesh.combine_rigs")
+        layout.operator("pixel.import_weapon")
+        layout.operator("pixel.fix_import")
+        layout.operator("pixel.combine_rigs")
 
+#   Rigging
+       
+class VIEW3D_PT_pixel_rigging(Panel):
+    """Creates a Panel in the scene context of the 3D view N panel"""
+    
+    bl_label = "Rigging"
+    bl_idname = "VIEW3D_PT_pixel_layout"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "PixelGun"
+    
+    
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+        
+        col = layout.column(align=False)
+        
+        layout.operator("pixel.import_weapon")
+        
 
 #   Modeling
 
@@ -741,6 +834,7 @@ classes = (
     pixel_properties,
     VIEW3D_PT_pixel_modeling,
     VIEW3D_PT_pixel_layout,
+    VIEW3D_PT_pixel_rigging,
     MESH_OT_optimize,
     MESH_OT_unwrap,
     MESH_OT_test_material,
@@ -748,8 +842,9 @@ classes = (
     MESH_OT_texture_pixel_filter,
     MESH_OT_set_tex_desity,
     MESH_OT_reload_textures,
-    MESH_OT_fix_import,
-    MESH_OT_combine_rigs,
+    PIXEL_OT_import_weapon,
+    PIXEL_OT_fix_import,
+    PIXEL_OT_combine_rigs,
     
     
     )
