@@ -73,6 +73,17 @@ def recurLayerCollection(layerColl, collName):
 #        bpy.context.view_layer.active_layer_collection = layerColl
 
 
+def create_wgt_cube(size = 0.1):
+    bpy.ops.object.mode_set_with_submode(mode='OBJECT')
+    bpy.ops.mesh.primitive_cube_add(size=200, enter_editmode=False, align='WORLD', location=(0, 0, 0), scale=(size, size, size))
+    bpy.context.object.name = "WGT_Cube"
+    bpy.ops.object.mode_set_with_submode(mode='EDIT')
+    bpy.ops.mesh.delete(type='ONLY_FACE')
+    bpy.ops.object.mode_set_with_submode(mode='OBJECT')
+
+
+
+
 def optimize(self, context):
     """Dissolves inner faces, welds double vertices and sets mesh sharp"""
     mod = context.object.mode
@@ -758,6 +769,11 @@ class PIXEL_OT_simple_controls(Operator):
             avatar_rig.pose.bones[bone.name].constraints.active.target = avatar_rig
             avatar_rig.pose.bones[bone.name].constraints.active.subtarget = 'CTRL_' + bone.name
             
+        create_wgt_cube(1)
+        bpy.ops.object.select_all(action='DESELECT')
+        context.active_object = avatar_rig
+        context.active_object.select_set(True)
+        
         bpy.ops.object.mode_set_with_submode(mode=mod)
         
         
