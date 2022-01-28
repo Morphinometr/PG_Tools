@@ -34,7 +34,6 @@ from bpy.types import (
     Operator
 )
 
-
 bl_info = {
     "name": "PixelGun Tools",
     "author": "Morphin",
@@ -47,7 +46,7 @@ bl_info = {
     "category": "3D View"
     }
 
-from . import ToolsPanel 
+from . import Operators, Panels, Utils
 
 class PixelGunToolsPreferences(AddonPreferences):
     bl_idname = __package__
@@ -92,19 +91,30 @@ class OBJECT_OT_pixelgun_tools_prefs(Operator):
 
         return {'FINISHED'}
 
+modules = (
+    Operators,
+    Panels,
+    Utils,
 
+)
+
+classes = (
+    OBJECT_OT_pixelgun_tools_prefs,
+    PixelGunToolsPreferences,
+
+)
     
 def register():
-    ToolsPanel.register()
-    bpy.utils.register_class(OBJECT_OT_pixelgun_tools_prefs)
-    bpy.utils.register_class(PixelGunToolsPreferences)
-
+    for mod in modules:
+        mod.register()
+    for cls in classes:
+        bpy.utils.register_class(cls)
 
 def unregister():
-    ToolsPanel.unregister()
-    bpy.utils.unregister_class(OBJECT_OT_pixelgun_tools_prefs)
-    bpy.utils.unregister_class(PixelGunToolsPreferences)
-
+    for mod in modules:
+        mod.unregister()
+    for cls in classes:
+        bpy.utils.unregister_class(cls)
 
 if __name__ == "__main__":
     register()

@@ -1,5 +1,5 @@
 import bpy
-from bpy.types import (Panel, Operator)
+from bpy.types import Operator
 bl_info = {"name": "Tools Panel",
            "description": "tools",
            "author": "Morphin",
@@ -10,7 +10,7 @@ bl_info = {"name": "Tools Panel",
            "wiki_url": "",
            "tracker_url": "",
            "category": "3D View", }
-  
+
 #   Custom properties
 
 class pixel_properties(bpy.types.PropertyGroup):
@@ -49,145 +49,6 @@ class pixel_properties(bpy.types.PropertyGroup):
     weapon_tag : bpy.props.StringProperty(name="Weapon Tag", default = "")
     weapon_number : bpy.props.StringProperty(name="Weapon Number", default = "")
     avatar_tag : bpy.props.StringProperty(name="Avatar Tag", default = "")
-    
-    
-              
-#   Functions
-
-def recurLayerCollection(layerColl, collName):
-    """Recursivly transverse layer_collection for a particular name"""
-    found = None
-    if (layerColl.name == collName):
-        return layerColl
-    for layer in layerColl.children:
-        found = recurLayerCollection(layer, collName)
-        if found:
-            return found
-
-##Switching active Collection to active Object selected
-#    obj = bpy.context.object
-#    ucol = obj.users_collection
-#    for i in ucol:
-#        layer_collection = bpy.context.view_layer.layer_collection
-#        layerColl = recurLayerCollection(layer_collection, i.name)
-#        bpy.context.view_layer.active_layer_collection = layerColl
-
-
-def create_wgt_cube(size = 0.1):
-    bpy.ops.object.mode_set_with_submode(mode='OBJECT')
-    bpy.ops.mesh.primitive_cube_add(size=200, enter_editmode=False, align='WORLD', location=(0, 0, 0), scale=(size, size, size))
-    bpy.context.object.name = "WGT_Cube"
-    bpy.ops.object.mode_set_with_submode(mode='EDIT')
-    bpy.ops.mesh.delete(type='ONLY_FACE')
-    bpy.ops.object.mode_set_with_submode(mode='OBJECT')
-
-
-
-
-def optimize(self, context):
-    """Dissolves inner faces, welds double vertices and sets mesh sharp"""
-    mod = context.object.mode
-    bpy.ops.object.mode_set_with_submode(mode='EDIT')
-    
-    bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.mesh.dissolve_limited()
-    bpy.ops.mesh.remove_doubles()
-    bpy.ops.mesh.normals_tools(mode='RESET')
-    bpy.ops.mesh.mark_sharp(clear=True)
-    bpy.ops.mesh.faces_shade_flat()
-
-    bpy.ops.object.mode_set_with_submode(mode=mod)
-    
-def unwrap(self, context):
-    mod = context.object.mode
-    bpy.ops.object.mode_set_with_submode(mode='EDIT')
-    
-    bpy.ops.mesh.select_mode(type="EDGE")
-    bpy.ops.mesh.select_all(action = 'DESELECT')
-    
-    seams = bpy.ops.mesh.edges_select_sharp()
-    bpy.ops.mesh.mark_seam(clear=False)
-
-    #unwrap
-    bpy.ops.mesh.select_all(action = 'SELECT')
-    bpy.ops.uv.unwrap(method='ANGLE_BASED', margin=0)
-
-    
-    bpy.ops.object.mode_set_with_submode(mode=mod)
-    
-def create_mat(self,context):
-    test_mat = bpy.data.materials.new(name="Test Material")
-    test_mat.use_nodes = True
-    test_mat.use_fake_user = True
-    test_mat.node_tree.nodes["Principled BSDF"].inputs[5].default_value = 0
-
-    
-    #test texture
-    principled_node = test_mat.node_tree.nodes.get('Principled BSDF')
-    test_image_node = test_mat.node_tree.nodes.new("ShaderNodeTexImage")
-    test_image_node.location = (-350, 200)
-        
-    link  = test_mat.node_tree.links.new
-    link(test_image_node.outputs[0], principled_node.inputs[0])
-    test_image_node.interpolation = 'Closest'
-    
-    #bake texture
-    test_image_node = test_mat.node_tree.nodes.new("ShaderNodeTexImage")
-    test_image_node.location = (-350, 800)
-    test_image_node.interpolation = 'Closest'
-
-    
-    return test_mat
-
-def texture_pixel_filter(self, context):
-    materials = get_materials(context)
-    textures = get_textures(materials)
-    
-    for mat in materials:
-        mat.node_tree.nodes["Principled BSDF"].inputs[5].default_value = 0
-
-           
-    for tex in textures:   
-         tex.interpolation = 'Closest'
-
-def reload_textures(self, context):
-    materials = get_materials(context)
-    textures = get_textures(materials)
-    
-    for tex in textures:
-        tex.image.reload()
-
-
-def addon_installed(name):
-    addons = bpy.context.preferences.addons.keys()
-    for ad in addons:
-        if ad.find(name) > -1:
-            return True
-    return False
-
-def get_materials(context):
-    materials = []
-    
-    if context.active_object is not None:
-        for slot in context.active_object.material_slots:
-             materials.append(slot.material)
-    
-    for ob in context.selected_objects:
-        for slot in ob.material_slots:
-            if slot.material not in materials:
-                materials.append(slot.material) 
-    
-    return materials
-    
-def get_textures(materials):
-    textures = []
-    for mat in materials:
-        for node in mat.node_tree.nodes:
-             if node.type == 'TEX_IMAGE':
-                 textures.append(node)
-    return textures
-
-
     
     
 
@@ -737,10 +598,10 @@ class PIXEL_OT_simple_controls(Operator):
     bl_idname = "pixel.create_simple_controls"
     bl_options = {'REGISTER', 'UNDO'}
 
-#    @classmethod
-#    def poll(cls, context):
-#        if context.preferences.addons['Pixel_Tools-main'].preferences['project_filepath'] == '' :
-#            return False
+    # @classmethod
+    # def poll(cls, context):
+    #     if context.preferences.addons['Pixel_Tools-main'].preferences['project_filepath'] == '' :
+    #         return False
 
     def execute(self, context):
         avatar_rig = context.active_object
@@ -782,109 +643,6 @@ class PIXEL_OT_simple_controls(Operator):
 
 ###########################   Panels  ################################
 
-#   Layout
-       
-class VIEW3D_PT_pixel_layout(Panel):
-    """Creates a Panel in the scene context of the 3D view N panel"""
-    
-    bl_label = "Layout"
-    bl_idname = "VIEW3D_PT_pixel_layout"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = "PixelGun"
-    
-    
-    def draw(self, context):
-        layout = self.layout
-        scene = context.scene
-        layout.use_property_split = True
-        layout.use_property_decorate = False
-        
-        col = layout.column(align=False)
-        
-        col.prop(scene.pixel_tool, "weapon_tag")
-        col.prop(scene.pixel_tool, "weapon_number")
-        col.prop(scene.pixel_tool, "avatar_tag")
-        
-        layout.operator("pixel.import_weapon")
-        layout.operator("pixel.fix_import")
-        layout.operator("pixel.combine_rigs")
-
-#   Riging
-       
-class VIEW3D_PT_pixel_riging(Panel):
-    """Creates a Panel in the scene context of the 3D view N panel"""
-    
-    bl_label = "Riging"
-    bl_idname = "VIEW3D_PT_pixel_riging"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = "PixelGun"
-    
-    
-    def draw(self, context):
-        layout = self.layout
-        scene = context.scene
-        layout.use_property_split = True
-        layout.use_property_decorate = False
-        
-        col = layout.column(align=False)
-        
-        layout.operator("pixel.create_simple_controls")
-        
-
-#   Modeling
-
-class VIEW3D_PT_pixel_modeling(Panel):
-    """Creates a Panel in the scene context of the 3D view N panel"""
-    
-    bl_label = "Modeling"
-    bl_idname = "VIEW3D_PT_pixel_modeling"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = "PixelGun"
-    
-    
-    def draw(self, context):
-        layout = self.layout
-        scene = context.scene
-        pixel_tool = scene.pixel_tool
-
-        layout.operator("mesh.texture_pixel_filter")  
-        layout.operator("mesh.optimize")
-        layout.operator("mesh.test_material")
-                
-        column = layout.column(align=True)
-        row = column.row(align = True)
-        
-        row.operator("mesh.test_texture")
-        row.prop(pixel_tool, 'tex_size', text='')
-        if scene.pixel_tool.tex_size == 'custom':
-            row = column.row(align = True) 
-            row.prop(pixel_tool, 'tex_size_custom_x', text='')
-            row.prop(pixel_tool, 'tex_size_custom_y', text='')
-        
-        layout.operator("mesh.unwrap")
-        
-        box = layout.box()
-        if addon_installed('Texel_Density'): 
-            column = box.column(align=True)
-            row = column.row(align = True)
-            
-            row.operator("mesh.set_tex_desity")
-            row.prop(pixel_tool, 'px_density', text='')
-            
-            if scene.pixel_tool.px_density == 'custom':
-                column.prop(pixel_tool, 'px_density_custom', text='')
-            
-            
-            
-            
-        else:
-            box.label(text = '"Texel Density" addon not found')
-            
-        layout.operator("mesh.reload_textures")
-        
 
 
         
@@ -893,9 +651,6 @@ class VIEW3D_PT_pixel_modeling(Panel):
 
 classes = (
     pixel_properties,
-    VIEW3D_PT_pixel_modeling,
-    VIEW3D_PT_pixel_layout,
-    VIEW3D_PT_pixel_riging,
     MESH_OT_optimize,
     MESH_OT_unwrap,
     MESH_OT_test_material,
@@ -915,7 +670,7 @@ classes = (
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-        bpy.types.Scene.pixel_tool = bpy.props.PointerProperty(type = pixel_properties)
+    bpy.types.Scene.pixel_tool = bpy.props.PointerProperty(type = pixel_properties)
 
 
 def unregister():
