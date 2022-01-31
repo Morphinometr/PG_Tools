@@ -1,7 +1,7 @@
-import bpy
+import bpy, math
+from mathutils import Matrix, Vector
+from bpy.types import Object, Armature
 
-              
-#   Functions
 
 def recurLayerCollection(layerColl, collName):
     """Recursivly transverse layer_collection for a particular name"""
@@ -21,14 +21,33 @@ def recurLayerCollection(layerColl, collName):
 #        layerColl = recurLayerCollection(layer_collection, i.name)
 #        bpy.context.view_layer.active_layer_collection = layerColl
 
+def obj_exists(name : str):
+    for ob in bpy.data.objects:
+        if ob.name == name:
+            return True
+    return False
 
-def create_wgt_cube(size = 0.1):
+def bone_exists(arm : Armature, name : str):
+    for b in arm.edit_bones:
+        if b.name == name:
+            return True
+    return False
+
+def create_wgt_cube(context, size : float = 1):
     bpy.ops.object.mode_set_with_submode(mode='OBJECT')
-    bpy.ops.mesh.primitive_cube_add(size=200, enter_editmode=False, align='WORLD', location=(0, 0, 0), scale=(size, size, size))
+    _size = size / context.scene.unit_settings.scale_length
+
+    bpy.ops.mesh.primitive_cube_add(size=_size, enter_editmode=False, align='WORLD', location=(0, 0, 0), scale=(size, size, size))
     bpy.context.object.name = "WGT_Cube"
     bpy.ops.object.mode_set_with_submode(mode='EDIT')
     bpy.ops.mesh.delete(type='ONLY_FACE')
     bpy.ops.object.mode_set_with_submode(mode='OBJECT')
+    
+def add_bone(armature : Object, name : str, transform : Matrix, length : float):
+    bone = armature.data.edit_bones.new(name)
+    bone.tail = bone.head + Vector((0,1,0)) * length
+    bone.matrix = transform.copy()
+    bone.select_tail = False
 
 
 
@@ -70,7 +89,6 @@ def create_mat(self,context):
     test_mat.use_fake_user = True
     test_mat.node_tree.nodes["Principled BSDF"].inputs[5].default_value = 0
 
-    
     #test texture
     principled_node = test_mat.node_tree.nodes.get('Principled BSDF')
     test_image_node = test_mat.node_tree.nodes.new("ShaderNodeTexImage")
@@ -85,7 +103,6 @@ def create_mat(self,context):
     test_image_node.location = (-350, 800)
     test_image_node.interpolation = 'Closest'
 
-    
     return test_mat
 
 def texture_pixel_filter(self, context):
@@ -95,7 +112,6 @@ def texture_pixel_filter(self, context):
     for mat in materials:
         mat.node_tree.nodes["Principled BSDF"].inputs[5].default_value = 0
 
-           
     for tex in textures:   
          tex.interpolation = 'Closest'
 
@@ -105,7 +121,6 @@ def reload_textures(self, context):
     
     for tex in textures:
         tex.image.reload()
-
 
 def addon_installed(name):
     addons = bpy.context.preferences.addons.keys()

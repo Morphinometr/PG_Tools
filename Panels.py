@@ -30,29 +30,6 @@ class VIEW3D_PT_pixel_layout(Panel):
         layout.operator("pixel.fix_import")
         layout.operator("pixel.combine_rigs")
 
-#   Riging
-       
-class VIEW3D_PT_pixel_riging(Panel):
-    """Creates a Panel in the scene context of the 3D view N panel"""
-    
-    bl_label = "Riging"
-    bl_idname = "VIEW3D_PT_pixel_riging"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = "PixelGun"
-    
-    
-    def draw(self, context):
-        layout = self.layout
-        scene = context.scene
-        layout.use_property_split = True
-        layout.use_property_decorate = False
-        
-        col = layout.column(align=False)
-        
-        layout.operator("pixel.create_simple_controls")
-        
-
 #   Modeling
 
 class VIEW3D_PT_pixel_modeling(Panel):
@@ -106,6 +83,47 @@ class VIEW3D_PT_pixel_modeling(Panel):
             box.label(text = '"Texel Density" addon not found')
             
         layout.operator("mesh.reload_textures")
+
+#   Riging
+       
+class VIEW3D_PT_pixel_riging(Panel):
+    """Creates a Panel in the scene context of the 3D view N panel"""
+    
+    bl_label = "Riging"
+    bl_idname = "VIEW3D_PT_pixel_riging"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "PixelGun"
+    
+    
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+        
+        col = layout.column(align=False)
+
+        col.operator("pixel.add_bone")
+        col.operator("pixel.create_simple_controls")
+        
+
+#   Dev
+
+class VIEW3D_PT_dev_panel(Panel):
+    """Used for testing things"""
+    
+    bl_label = "***Dev***"
+    bl_idname = "VIEW3D_PT_dev_panel"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "PixelGun"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator("pixel.test")
+
+
         
 
 #   Registration
@@ -114,6 +132,7 @@ classes = (
     VIEW3D_PT_pixel_modeling,
     VIEW3D_PT_pixel_layout,
     VIEW3D_PT_pixel_riging,
+    VIEW3D_PT_dev_panel,
 )
 
 def register():

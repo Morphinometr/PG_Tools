@@ -1,5 +1,8 @@
-import bpy
+from contextvars import Context
+import bpy, mathutils
 from bpy.types import Operator
+from .Utils import *
+
 bl_info = {"name": "Tools Panel",
            "description": "tools",
            "author": "Morphin",
@@ -385,10 +388,6 @@ class PIXEL_OT_fix_import(Operator):
             self.report({'ERROR'}, 'Armature has no parent')
             return {'CANCELLED'} 
         
-        #Temp
-        '''TODO: Make "tag" variable'''
-        scene.pixel_tool.weapon_tag
-        
         if scene.pixel_tool.weapon_tag == '':
             scene.pixel_tool.weapon_tag = armature.name
         
@@ -591,6 +590,32 @@ class PIXEL_OT_combine_rigs(Operator):
 
 #   Riging
 
+#   Create bone with proper scene scaling
+class PIXEL_OT_add_bone(Operator):
+    """ """
+    bl_label = "Add Bone"
+    bl_idname = "pixel.add_bone"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        if context.active_object is None :
+            return False
+        if context.active_object.type != 'ARMATURE':
+            return False        
+        return True
+
+    def execute(self, context):
+        ob = context.active_object
+        bpy.ops.object.mode_set_with_submode(mode='EDIT')
+        mat = mathutils.Matrix().Translation(context.scene.cursor.location)
+        add_bone(ob, 'Bone', mat, 1 / context.scene.unit_settings.scale_length)
+        
+        return {'FINISHED'}
+
+
+
+
 #   Create simple controls
 class PIXEL_OT_simple_controls(Operator):
     """Create control bones"""
@@ -618,11 +643,15 @@ class PIXEL_OT_simple_controls(Operator):
         
         #Dirty!    
         bpy.ops.armature.duplicate_move()
+
+
         
         for bone in context.selected_bones:
             bone.name = "CTRL_" + bone.name[:-4]
             ctrl_bones.append(bone)
             bone.length *= 1.5
+
+
             
         bpy.ops.object.mode_set_with_submode(mode='POSE')
         for bone in def_bones:
@@ -630,22 +659,35 @@ class PIXEL_OT_simple_controls(Operator):
             avatar_rig.pose.bones[bone.name].constraints.active.target = avatar_rig
             avatar_rig.pose.bones[bone.name].constraints.active.subtarget = 'CTRL_' + bone.name
             
-        create_wgt_cube(1)
-        bpy.ops.object.select_all(action='DESELECT')
-        context.active_object = avatar_rig
-        context.active_object.select_set(True)
+        
+        if not obj_exists('WGT_Cube'):
+            create_wgt_cube(context, 1)
+            bpy.ops.object.select_all(action='DESELECT')
+            context.scene.objects.active = avatar_rig
+            context.active_object.select_set(True)
         
         bpy.ops.object.mode_set_with_submode(mode=mod)
         
-        
-        
         return {'FINISHED'}
 
-###########################   Panels  ################################
 
 
+class PIXEL_OT_test(Operator):
+    """test operator"""
+    bl_label = "DEV: test"
+    bl_idname = "pixel.test"
+    bl_options = {'REGISTER', 'UNDO'}
 
+    def execute(self, context):
+        ob = bpy.data.objects['Armature']
+        sel_bone = ob.data.edit_bones['Bone']
         
+        bone_name = 'Bone_copy'
+
+        if not bone_exists(ob.data, bone_name):
+            add_bone(ob, 'Bone_copy', sel_bone.matrix, sel_bone.length * 1.5 )
+        
+        return {'FINISHED'}
                 
 #   Registration
 
@@ -661,23 +703,22 @@ classes = (
     PIXEL_OT_import_weapon,
     PIXEL_OT_fix_import,
     PIXEL_OT_combine_rigs,
+    PIXEL_OT_add_bone,
     PIXEL_OT_simple_controls,
-    
-    
-    )
-                    
+
+    PIXEL_OT_test,
+        
+    )        
                 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     bpy.types.Scene.pixel_tool = bpy.props.PointerProperty(type = pixel_properties)
 
-
 def unregister():
     del bpy.types.Scene.pixel_tool
     for cls in classes:
         bpy.utils.unregister_class(cls)
         
-
 if __name__ == "__main__":
     register()

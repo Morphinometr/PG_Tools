@@ -94,7 +94,7 @@ class OBJECT_OT_pixelgun_tools_prefs(Operator):
 modules = (
     Operators,
     Panels,
-    Utils,
+    
 
 )
 
