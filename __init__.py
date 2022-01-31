@@ -46,15 +46,16 @@ bl_info = {
     "category": "3D View"
     }
 
-from . import Operators, Panels, Utils
+from . import Operators, Panels, Menus
 
 class PixelGunToolsPreferences(AddonPreferences):
     bl_idname = __package__
 
-    project_filepath: StringProperty(
+    project_filepath : StringProperty(
         name="PixelGun Project directory",
         subtype='FILE_PATH',
     )
+
     # number: IntProperty(
     #     name="Example Number",
     #     default=4,
@@ -74,7 +75,7 @@ class PixelGunToolsPreferences(AddonPreferences):
 
 class OBJECT_OT_pixelgun_tools_prefs(Operator):
     """Display preferences"""
-    bl_idname = "object.pixelgun_tools_prefs"
+    bl_idname = "pixel.pixelgun_tools_prefs"
     bl_label = "Add-on Preferences"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -94,7 +95,7 @@ class OBJECT_OT_pixelgun_tools_prefs(Operator):
 modules = (
     Operators,
     Panels,
-    
+    Menus,
 
 )
 

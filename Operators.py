@@ -1,7 +1,9 @@
-from contextvars import Context
 import bpy, mathutils
 from bpy.types import Operator
+from bpy.props import EnumProperty, BoolProperty, IntProperty, FloatProperty, StringProperty
 from .Utils import *
+from .Menus import *
+
 
 bl_info = {"name": "Tools Panel",
            "description": "tools",
@@ -18,7 +20,7 @@ bl_info = {"name": "Tools Panel",
 
 class pixel_properties(bpy.types.PropertyGroup):
     
-    tex_size : bpy.props.EnumProperty(
+    tex_size : EnumProperty(
         name = 'Texture Dimentions', 
         items = [('16', '16x16', ''),
                  ('32', '32x32', ''),
@@ -34,7 +36,7 @@ class pixel_properties(bpy.types.PropertyGroup):
         default = '64'
         )
     
-    px_density : bpy.props.EnumProperty(
+    px_density : EnumProperty(
         name = 'Pixel Density',
         items = [('10', '10 px/m', ''),
                  ('16', '16 px/m', ''),
@@ -45,13 +47,13 @@ class pixel_properties(bpy.types.PropertyGroup):
         default = '16'
         )
         
-    tex_size_custom_x : bpy.props.IntProperty(name="Custom texture size X", min = 1, default = 64 )
-    tex_size_custom_y : bpy.props.IntProperty(name="Custom texture size Y", min = 1, default = 64 )
-    px_density_custom : bpy.props.FloatProperty(name="Custom Pixel Density", min = 0 )
+    px_density_custom : FloatProperty(name="Custom Pixel Density", min = 0 )
+    tex_size_custom_y : IntProperty(name="Custom texture size Y", min = 1, default = 64 )
+    tex_size_custom_x : IntProperty(name="Custom texture size X", min = 1, default = 64 )
     
-    weapon_tag : bpy.props.StringProperty(name="Weapon Tag", default = "")
-    weapon_number : bpy.props.StringProperty(name="Weapon Number", default = "")
-    avatar_tag : bpy.props.StringProperty(name="Avatar Tag", default = "")
+    weapon_tag : StringProperty(name="Weapon Tag", default = "")
+    weapon_number : StringProperty(name="Weapon Number", default = "")
+    avatar_tag : StringProperty(name="Avatar Tag", default = "")
     
     
 
@@ -74,7 +76,7 @@ class MESH_OT_optimize(Operator):
                 )
     
     def execute(self, context):
-        optimize(self, context)
+        optimize(context)
        
         return {'FINISHED'}
 
@@ -95,7 +97,7 @@ class MESH_OT_unwrap(Operator):
                 )
             
     def execute(self, context):
-        unwrap(self,context)
+        unwrap(context)
     
         return {'FINISHED'}
 
@@ -124,8 +126,8 @@ class MESH_OT_test_material(Operator):
         
             
         #append to selected objects
-        for ob in bpy.context.selected_objects :
-            ob.active_material = test_mat
+        for arm in bpy.context.selected_objects :
+            arm.active_material = test_mat
                    
         return {'FINISHED'}
     
@@ -136,7 +138,7 @@ class MESH_OT_test_texture(Operator):
     bl_idname = "mesh.test_texture"
     bl_options = {'REGISTER', 'UNDO'}
     
-    size : bpy.props.EnumProperty(
+    size : EnumProperty(
         name = 'Texture Dimentions', 
         items = [('16', '16x16', ''),
                  ('32', '32x32', ''),
@@ -152,8 +154,8 @@ class MESH_OT_test_texture(Operator):
         default = '64'
         )
         
-    tex_size_x : bpy.props.IntProperty(name="Custom texture size X", min = 1, default = 64 )
-    tex_size_y : bpy.props.IntProperty(name="Custom texture size Y", min = 1, default = 64 )
+    tex_size_x : IntProperty(name="Custom texture size X", min = 1, default = 64 )
+    tex_size_y : IntProperty(name="Custom texture size Y", min = 1, default = 64 )
     
     @classmethod
     def poll(cls, context):
@@ -220,7 +222,7 @@ class MESH_OT_texture_pixel_filter(Operator):
         return True
             
     def execute(self, context):
-        texture_pixel_filter(self, context)
+        texture_pixel_filter(context)
         
         return {'FINISHED'}
  
@@ -242,7 +244,7 @@ class MESH_OT_reload_textures(Operator):
 #                )
             
     def execute(self, context):
-        reload_textures(self,context)
+        reload_textures(context)
     
         return {'FINISHED'}
     
@@ -306,10 +308,18 @@ class PIXEL_OT_import_weapon(Operator):
     bl_idname = "pixel.import_weapon"
     bl_options = {'REGISTER', 'UNDO'}
 
-#    @classmethod
-#    def poll(cls, context):
-#        if context.preferences.addons['Pixel_Tools-main'].preferences['project_filepath'] == '' :
-#            return False
+    weapon_tag : StringProperty(name = "Weapon tag" )
+    pixelize : BoolProperty(name = "Pixelize", description = "Make imported textures pixelated", default = True)
+    fix_materials : BoolProperty(name = "Flatten materaials", description = "set 0 in metallness, specular, emission properties in imported materials", default = True)
+
+    @classmethod
+    def poll(cls, context):
+        return context.area.type == 'VIEW_3D'
+
+    def invoke(self, context, event):
+        self.weapon_tag = context.scene.pixel_tool.weapon_tag
+                    
+        return self.execute(context)
 
     def execute(self, context):
         scene = context.scene
@@ -325,11 +335,14 @@ class PIXEL_OT_import_weapon(Operator):
         bpy.context.view_layer.active_layer_collection = layer_collection
         
         
+        addon = context.preferences.addons[get_addon_name(context)]
         
-        
-        project_path = context.preferences.addons['Pixel_Tools-main'].preferences['project_filepath']
-        weapon_path = project_path + "\\Assets\\Sources\\Models\\Weapons\\" + scene.pixel_tool.weapon_tag + "\\" + scene.pixel_tool.weapon_tag + ".fbx"        
-        textures_path = project_path + "\\Assets\\Sources\\Textures\\maps\\Weapons\\map_weapon\\"
+        project_path = addon.preferences['project_filepath']
+        weapon_path = project_path + "\\Assets\\Sources\\Models\\Weapons\\" + self.weapon_tag + "\\" + self.weapon_tag + ".fbx"
+        textures_paths = []
+        textures_paths.append(project_path + "\\Assets\\Sources\\Textures\\maps\\Weapons\\map_weapon\\")
+        textures_paths.append(project_path + "\\Assets\\Resources\\WeaponSkinsV2\\WeaponSkinAssets\\Share4skins")
+        textures_paths.append(project_path + "\\Assets\\Sources\\Textures")
         
         bpy.ops.better_import.fbx(filepath=weapon_path, 
                                   use_auto_bone_orientation=False, 
@@ -339,16 +352,83 @@ class PIXEL_OT_import_weapon(Operator):
                                   my_scale=1, 
                                   use_reset_mesh_origin=False)
         
-        bpy.ops.file.find_missing_files(directory=textures_path)
-
+        for path in textures_paths:
+            bpy.ops.file.find_missing_files(directory=path)
         
-        #bpy.context.view_layer.collections.active = bpy.data.collections['Weapon']
+        if self.pixelize:
+            texture_pixel_filter(context)
+        if self.fix_materials:
+            flatten_materials(context)
+
+        context.scene.pixel_tool.weapon_tag = self.weapon_tag
+
+        return {'FINISHED'}
+
+class PIXEL_OT_import_avatar(Operator):
+    """Import Avatar by its Tag"""
+    bl_label = "Import Avatar"
+    bl_idname = "pixel.import_avatar"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    avatar_tag : StringProperty(name = "Avatar Name" )
+    pixelize : BoolProperty(name = "Pixelize", description = "Make imported textures pixelated", default = True)
+    fix_materials : BoolProperty(name = "Flatten materaials", description = "set 0 in metallness, specular, emission properties in imported materials", default = True)
+
+    @classmethod
+    def poll(cls, context):
+        return context.area.type == 'VIEW_3D'
+
+    def invoke(self, context, event):
+        self.avatar_tag = context.scene.pixel_tool.avatar_tag
+                    
+        return self.execute(context)
+
+    def execute(self, context):
+        
+        if context.collection != "Avatar":
+            try: 
+                collection = bpy.data.collections['Avatar']
+            except Exception:
+                collection = bpy.data.collections.new('Avatar')
+                bpy.context.scene.collection.children.link(collection)
+                
+        layer_collection = bpy.context.view_layer.layer_collection.children[collection.name]
+        bpy.context.view_layer.active_layer_collection = layer_collection
+        
+        
+        addon = context.preferences.addons[get_addon_name(context)]
+        
+        project_path = addon.preferences['project_filepath']
+        weapon_path = project_path + "\\Assets\\Sources\\battle_royale\\Models\\" + self.avatar_tag + ".fbx"
+
+        textures_paths = []
+        textures_paths.append(project_path + "\\Assets\\Sources\\battle_royale\\Textures")
+        textures_paths.append(project_path + "\\Assets\\Resources\\WeaponSkinsV2\\WeaponSkinAssets\\Share4skins")
+        
+        bpy.ops.better_import.fbx(filepath=weapon_path, 
+                                  use_auto_bone_orientation=False, 
+                                  use_fix_attributes=True, 
+                                  my_import_normal='Import', 
+                                  use_auto_smooth=False, 
+                                  my_scale=1, 
+                                  use_reset_mesh_origin=False)
+        
+        for path in textures_paths:
+            bpy.ops.file.find_missing_files(directory=path)
+        
+
+        if self.pixelize:
+            texture_pixel_filter(context)
+        if self.fix_materials:
+            flatten_materials(context)
+
+        context.scene.pixel_tool.avatar_tag = self.avatar_tag
 
         return {'FINISHED'}
         
 #Solve some bugs of Better FBX importer
 class PIXEL_OT_fix_import(Operator):
-    """Fix imported Weapon Rig"""
+    """Fix imported Weapon Rig in active Collection"""
     bl_label = "Fix Imported Rig"
     bl_idname = "pixel.fix_import"
     bl_options = {'REGISTER', 'UNDO'}
@@ -394,9 +474,11 @@ class PIXEL_OT_fix_import(Operator):
         tag = scene.pixel_tool.weapon_tag
         
         
-        #create trash collection        
-        trash_col = bpy.data.collections.new('trash')
-        collection.children.link(trash_col)        
+        #create trash collection
+        if bpy.data.collections.find('trash') < 0:
+            trash_col = bpy.data.collections.new('trash')
+            collection.children.link(trash_col)
+        else: trash_col = bpy.data.collections['trash']
               
         context.view_layer.objects.active = armature  #Set armature as Active Object
         
@@ -416,11 +498,9 @@ class PIXEL_OT_fix_import(Operator):
         #parent all bones without parent to newely created bone
         for name, id in armature.data.bones.items():
             if id.name == tag:
-                #print(name)
                 continue
             if id.parent == None:
                 armature.data.edit_bones[name].parent = armature.data.edit_bones[tag]
-                #print(name)
         
         #exit Edit Mode
         bpy.ops.object.mode_set_with_submode(mode=mod)
@@ -439,10 +519,11 @@ class PIXEL_OT_fix_import(Operator):
         armature.matrix_world = matrix
         
         #move to trash collection
-        trash_col.objects.link(parent)
-        collection.objects.unlink(parent)
+        for ob in emptys:
+            trash_col.objects.link(ob)
+            collection.objects.unlink(ob)
         
-        emptys.remove(parent) #remove solved empty from the list
+        #emptys.remove(parent) #remove solved empty from the list
         
         '''TODO: Hide Trash collection in outliner'''
         #context.view_layer.layer_collection.children[trash_col.name].exclude = True
@@ -471,8 +552,8 @@ class PIXEL_OT_combine_rigs(Operator):
             return False
         if len(context.selected_objects) < 2 or len(context.selected_objects) >3:
             return False
-        for ob in context.selected_objects:
-            if ob.type != 'ARMATURE':
+        for arm in context.selected_objects:
+            if arm.type != 'ARMATURE':
                 return False        
         return True
     
@@ -482,10 +563,7 @@ class PIXEL_OT_combine_rigs(Operator):
         list.remove(avatar_rig)
         weapon_rig =list[0]
         
-        #move all bones in weapon rig to 10th layer
-        for bone in weapon_rig.data.bones:
-            bone.layers[10]=True
-            bone.layers[0]=False      
+        move_bones_to_layer(avatar_rig.data.bones, layer = 10) 
         
         #join rigs
         bpy.ops.object.join()
@@ -550,7 +628,7 @@ class PIXEL_OT_combine_rigs(Operator):
         
         character_holder = avatar_rig.data.edit_bones['CharacterHolder']
         
-        #weap_prefab = character_holder.children[0]
+        #weap_prefab == ContentPres_weaponXXXX
         for bone in character_holder.children:
             if bone.name.find('Weapon') > -1:
                 weap_prefab = bone
@@ -606,10 +684,10 @@ class PIXEL_OT_add_bone(Operator):
         return True
 
     def execute(self, context):
-        ob = context.active_object
+        arm = context.active_object.data
         bpy.ops.object.mode_set_with_submode(mode='EDIT')
         mat = mathutils.Matrix().Translation(context.scene.cursor.location)
-        add_bone(ob, 'Bone', mat, 1 / context.scene.unit_settings.scale_length)
+        add_bone(arm, 'Bone', mat, 1 / context.scene.unit_settings.scale_length)
         
         return {'FINISHED'}
 
@@ -623,49 +701,69 @@ class PIXEL_OT_simple_controls(Operator):
     bl_idname = "pixel.create_simple_controls"
     bl_options = {'REGISTER', 'UNDO'}
 
-    # @classmethod
-    # def poll(cls, context):
-    #     if context.preferences.addons['Pixel_Tools-main'].preferences['project_filepath'] == '' :
-    #         return False
+    ctrl_layer : IntProperty(name = "CTRL Bones Layer", description = "Layer To Place Control Bones", min = 0, max = 31)
+    set_wgt : BoolProperty(name = "Set Widgets", description = "Set Cube Widgets for Control Bones", default = False)
+    
+    # TODO:
+    # adaptive_wgt : BoolProperty(name = "Adaptive WGTs", description = "", default = True)
+    # adj_transform : BoolProperty(name = "Adjust Transform", description = "Move Control Bones to Deformation Bones Transform", default = False )
+    
+
+    @classmethod
+    def poll(cls, context):
+        if context.active_object == False :
+            return False
+        return True
 
     def execute(self, context):
         avatar_rig = context.active_object
+        armature = avatar_rig.data
         def_bones = []
-        ctrl_bones = []
+        bone_pairs = {}
         mod = context.object.mode
         
-        
+        if not obj_exists('WGT_Cube') and self.set_wgt:
+            create_wgt_cube(context, 1)
+            bpy.ops.object.select_all(action='DESELECT')
+            context.view_layer.objects.active = avatar_rig
+            context.active_object.select_set(True)
         
         bpy.ops.object.mode_set_with_submode(mode='EDIT')
         for bone in context.selected_bones:
             def_bones.append(bone)
         
-        
-        #Dirty!    
-        bpy.ops.armature.duplicate_move()
-
-
-        
-        for bone in context.selected_bones:
-            bone.name = "CTRL_" + bone.name[:-4]
-            ctrl_bones.append(bone)
-            bone.length *= 1.5
-
-
+        tmp = def_bones.copy()
             
-        bpy.ops.object.mode_set_with_submode(mode='POSE')
+        #Duplicate selected bones
         for bone in def_bones:
-            avatar_rig.pose.bones[bone.name].constraints.new('COPY_TRANSFORMS')
-            avatar_rig.pose.bones[bone.name].constraints.active.target = avatar_rig
-            avatar_rig.pose.bones[bone.name].constraints.active.subtarget = 'CTRL_' + bone.name
+            ctrl_name = 'CTRL_' + bone.name
+            ctrl_bone = add_bone(armature, ctrl_name, bone.matrix, bone.length * 1.5)
             
+            #deselect old bones
+            bone.select = bone.select_head = bone.select_tail = False
+            
+            bone_pairs[bone.name] = ctrl_bone.name  #Solves issue if name already existed
+    
+    
+        move_bones_to_layer(context.selected_bones, self.ctrl_layer)
+
+        # Relations
+        for bone in def_bones:
+            if bone.parent in def_bones:
+                armature.edit_bones[bone_pairs[bone.name]].parent = armature.edit_bones[bone_pairs[bone.parent.name]]
+                
         
-        if not obj_exists('WGT_Cube'):
-            create_wgt_cube(context, 1)
-            bpy.ops.object.select_all(action='DESELECT')
-            context.scene.objects.active = avatar_rig
-            context.active_object.select_set(True)
-        
+        # Constraints and widgets             
+        bpy.ops.object.mode_set_with_submode(mode='POSE')
+        for bone, ctrl in bone_pairs.items():
+            avatar_rig.pose.bones[bone].constraints.new('COPY_TRANSFORMS')
+            avatar_rig.pose.bones[bone].constraints.active.target = avatar_rig
+            avatar_rig.pose.bones[bone].constraints.active.subtarget = ctrl
+
+            if self.set_wgt:
+                avatar_rig.pose.bones[ctrl].custom_shape = bpy.data.objects['WGT_Cube']
+                avatar_rig.pose.bones[ctrl].use_custom_shape_bone_size = False
+
         bpy.ops.object.mode_set_with_submode(mode=mod)
         
         return {'FINISHED'}
@@ -679,13 +777,13 @@ class PIXEL_OT_test(Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        ob = bpy.data.objects['Armature']
-        sel_bone = ob.data.edit_bones['Bone']
+        arm = bpy.data.objects['Armature'].data
+        sel_bone = arm.edit_bones['Bone']
         
         bone_name = 'Bone_copy'
 
-        if not bone_exists(ob.data, bone_name):
-            add_bone(ob, 'Bone_copy', sel_bone.matrix, sel_bone.length * 1.5 )
+        if not bone_exists(arm, bone_name):
+            add_bone(arm, 'Bone_copy', sel_bone.matrix, sel_bone.length * 1.5 )
         
         return {'FINISHED'}
                 
@@ -700,6 +798,7 @@ classes = (
     MESH_OT_texture_pixel_filter,
     MESH_OT_set_tex_desity,
     MESH_OT_reload_textures,
+    PIXEL_OT_import_avatar,
     PIXEL_OT_import_weapon,
     PIXEL_OT_fix_import,
     PIXEL_OT_combine_rigs,

@@ -22,10 +22,11 @@ class VIEW3D_PT_pixel_layout(Panel):
         
         col = layout.column(align=False)
         
+        col.prop(scene.pixel_tool, "avatar_tag")
         col.prop(scene.pixel_tool, "weapon_tag")
         col.prop(scene.pixel_tool, "weapon_number")
-        col.prop(scene.pixel_tool, "avatar_tag")
-        
+                
+        layout.operator("pixel.import_avatar")
         layout.operator("pixel.import_weapon")
         layout.operator("pixel.fix_import")
         layout.operator("pixel.combine_rigs")
@@ -121,7 +122,9 @@ class VIEW3D_PT_dev_panel(Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator("pixel.test")
+        # layout.operator("pixel.test")
+        layout.menu("pixel.control_bones_menu")
+
 
 
         

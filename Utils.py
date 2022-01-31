@@ -2,6 +2,12 @@ import bpy, math
 from mathutils import Matrix, Vector
 from bpy.types import Object, Armature
 
+def get_addon_name(context):
+    modules = context.preferences.addons.keys()
+    for mod in modules:
+        if 'Pixel_Tools' in mod:
+            print(mod)
+            return mod
 
 def recurLayerCollection(layerColl, collName):
     """Recursivly transverse layer_collection for a particular name"""
@@ -20,6 +26,8 @@ def recurLayerCollection(layerColl, collName):
 #        layer_collection = bpy.context.view_layer.layer_collection
 #        layerColl = recurLayerCollection(layer_collection, i.name)
 #        bpy.context.view_layer.active_layer_collection = layerColl
+
+
 
 def obj_exists(name : str):
     for ob in bpy.data.objects:
@@ -43,16 +51,26 @@ def create_wgt_cube(context, size : float = 1):
     bpy.ops.mesh.delete(type='ONLY_FACE')
     bpy.ops.object.mode_set_with_submode(mode='OBJECT')
     
-def add_bone(armature : Object, name : str, transform : Matrix, length : float):
-    bone = armature.data.edit_bones.new(name)
+def add_bone(armature : Armature, name : str, transform : Matrix, length : float):
+    bone = armature.edit_bones.new(name)
     bone.tail = bone.head + Vector((0,1,0)) * length
     bone.matrix = transform.copy()
-    bone.select_tail = False
+    bone.select = bone.select_head = bone.select_tail = True
+    return bone
+
+def move_bones_to_layer(bones, layer : int):
+    for bone in bones:
+        bone.layers[10]=True
+        for l in range(32):
+            if l == layer: 
+                continue
+            bone.layers[l] = False
+                 
+        
 
 
 
-
-def optimize(self, context):
+def optimize(context):
     """Dissolves inner faces, welds double vertices and sets mesh sharp"""
     mod = context.object.mode
     bpy.ops.object.mode_set_with_submode(mode='EDIT')
@@ -66,14 +84,14 @@ def optimize(self, context):
 
     bpy.ops.object.mode_set_with_submode(mode=mod)
     
-def unwrap(self, context):
+def unwrap(context):
     mod = context.object.mode
     bpy.ops.object.mode_set_with_submode(mode='EDIT')
     
     bpy.ops.mesh.select_mode(type="EDGE")
     bpy.ops.mesh.select_all(action = 'DESELECT')
     
-    seams = bpy.ops.mesh.edges_select_sharp()
+    bpy.ops.mesh.edges_select_sharp()
     bpy.ops.mesh.mark_seam(clear=False)
 
     #unwrap
@@ -105,7 +123,7 @@ def create_mat(self,context):
 
     return test_mat
 
-def texture_pixel_filter(self, context):
+def texture_pixel_filter(context):
     materials = get_materials(context)
     textures = get_textures(materials)
     
@@ -113,9 +131,9 @@ def texture_pixel_filter(self, context):
         mat.node_tree.nodes["Principled BSDF"].inputs[5].default_value = 0
 
     for tex in textures:   
-         tex.interpolation = 'Closest'
+        tex.interpolation = 'Closest'
 
-def reload_textures(self, context):
+def reload_textures(context):
     materials = get_materials(context)
     textures = get_textures(materials)
     
@@ -134,7 +152,7 @@ def get_materials(context):
     
     if context.active_object is not None:
         for slot in context.active_object.material_slots:
-             materials.append(slot.material)
+            materials.append(slot.material)
     
     for ob in context.selected_objects:
         for slot in ob.material_slots:
@@ -151,3 +169,11 @@ def get_textures(materials):
                  textures.append(node)
     return textures
 
+def flatten_materials(context):
+    materials = get_materials(context)
+    for mat in materials:
+        for i in (6,7,20): # 6 - Metallic, 7 - Specular, 20 - Emission
+            mat.node_tree.nodes["Principled BSDF"].inputs[i].default_value = 0
+
+
+    
