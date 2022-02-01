@@ -135,7 +135,7 @@ classes = (
     VIEW3D_PT_pixel_modeling,
     VIEW3D_PT_pixel_layout,
     VIEW3D_PT_pixel_riging,
-    VIEW3D_PT_dev_panel,
+    #VIEW3D_PT_dev_panel,
 )
 
 def register():

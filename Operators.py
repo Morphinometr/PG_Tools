@@ -711,7 +711,7 @@ class PIXEL_OT_simple_controls(Operator):
 
     @classmethod
     def poll(cls, context):
-        if context.active_object == False :
+        if context.active_object == None or context.active_object.type != 'ARMATURE' :
             return False
         return True
 
