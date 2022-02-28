@@ -5,17 +5,6 @@ from .Utils import *
 from .Menus import *
 
 
-bl_info = {"name": "Tools Panel",
-           "description": "tools",
-           "author": "Morphin",
-           "version": (0, 0, 2),
-           "blender": (2, 80, 0),
-           "location": "View3d > Properties > View > PixelGun",
-           "warning": "",
-           "wiki_url": "",
-           "tracker_url": "",
-           "category": "3D View", }
-
 #   Custom properties
 
 class pixel_properties(bpy.types.PropertyGroup):
@@ -507,11 +496,14 @@ class PIXEL_OT_fix_import(Operator):
     
         
         #delete keyframes from armature object
-        for f in range(int(armature.animation_data.action.frame_range[0]), int(armature.animation_data.action.frame_range[1]+1)):
-            armature.keyframe_delete('location', frame=f)
-            armature.keyframe_delete('rotation_quaternion', frame=f)
-            armature.keyframe_delete('scale', frame=f)
-             
+        try:
+            for f in range(int(armature.animation_data.action.frame_range[0]), int(armature.animation_data.action.frame_range[1]+1)):
+                armature.keyframe_delete('location', frame=f)
+                armature.keyframe_delete('rotation_quaternion', frame=f)
+                armature.keyframe_delete('scale', frame=f)
+        except:
+            pass
+
         #clear parenting and keep location
         parent = armature.parent
         matrix = armature.matrix_world
@@ -563,7 +555,7 @@ class PIXEL_OT_combine_rigs(Operator):
         list.remove(avatar_rig)
         weapon_rig =list[0]
         
-        move_bones_to_layer(avatar_rig.data.bones, layer = 10) 
+        move_bones_to_layer(weapon_rig.data.bones, layer = 10) 
         
         #join rigs
         bpy.ops.object.join()
@@ -617,7 +609,7 @@ class PIXEL_OT_combine_rigs(Operator):
         avatar_rig.pose.bones[weapon_arm_R.name].constraints.active.subtarget = 'MCH_arm_R'
 
 
-        #TODO: Make choice
+        #TODO: Make choice if left arm needed
         #left
         avatar_rig.pose.bones[weapon_arm_L.name].constraints.new('COPY_TRANSFORMS')
         avatar_rig.pose.bones[weapon_arm_L.name].constraints.active.target = avatar_rig
@@ -633,6 +625,8 @@ class PIXEL_OT_combine_rigs(Operator):
             if bone.name.find('Weapon') > -1:
                 weap_prefab = bone
                 break
+        #FIXME!!
+
         for bone in weap_prefab.children:
             if bone.name.find('Weapon') > -1:
                 weapon = bone
@@ -658,10 +652,15 @@ class PIXEL_OT_combine_rigs(Operator):
             avatar.name = context.scene.pixel_tool.avatar_tag
              
         #pin weapon mesh to avatar rig
-        weapon_mesh = bpy.data.objects[weapon_tag +'_mesh']
+        for name, ob in bpy.data.objects.items():
+            if ob.type == 'MESH' and name.startswith(weapon_tag): #not all weapon meshes has '_mesh' postfix
+                weapon_mesh = ob
+                break #we take the first match
+        
         if weapon_mesh is not None:
             weapon_mesh.modifiers[0].object = avatar_rig
-        
+        else:
+            self.report({'WARNING'}, "Couldn't find weapon mesh. Armature not assigned")
         
         return {'FINISHED'}
 
@@ -675,6 +674,8 @@ class PIXEL_OT_add_bone(Operator):
     bl_idname = "pixel.add_bone"
     bl_options = {'REGISTER', 'UNDO'}
 
+    lenght : FloatProperty(name = 'Lenght', default = 1, min = 0)
+
     @classmethod
     def poll(cls, context):
         if context.active_object is None :
@@ -686,8 +687,8 @@ class PIXEL_OT_add_bone(Operator):
     def execute(self, context):
         arm = context.active_object.data
         bpy.ops.object.mode_set_with_submode(mode='EDIT')
-        mat = mathutils.Matrix().Translation(context.scene.cursor.location)
-        add_bone(arm, 'Bone', mat, 1 / context.scene.unit_settings.scale_length)
+        mat = mathutils.Matrix().Translation(context.scene.cursor.location - context.active_object.location) #add armature location to 3d cursor
+        add_bone(arm, 'Bone', mat, self.lenght / context.scene.unit_settings.scale_length)
         
         return {'FINISHED'}
 
@@ -731,13 +732,12 @@ class PIXEL_OT_simple_controls(Operator):
         bpy.ops.object.mode_set_with_submode(mode='EDIT')
         for bone in context.selected_bones:
             def_bones.append(bone)
-        
-        tmp = def_bones.copy()
             
         #Duplicate selected bones
         for bone in def_bones:
             ctrl_name = 'CTRL_' + bone.name
             ctrl_bone = add_bone(armature, ctrl_name, bone.matrix, bone.length * 1.5)
+            ctrl_bone.use_deform = False
             
             #deselect old bones
             bone.select = bone.select_head = bone.select_tail = False
@@ -777,13 +777,14 @@ class PIXEL_OT_test(Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        arm = bpy.data.objects['Armature'].data
-        sel_bone = arm.edit_bones['Bone']
+        self.report({'WARNING'}, "Couldn't find weapon mesh. Armature not assigned")
+        # arm = bpy.data.objects['Armature'].data
+        # sel_bone = arm.edit_bones['Bone']
         
-        bone_name = 'Bone_copy'
+        # bone_name = 'Bone_copy'
 
-        if not bone_exists(arm, bone_name):
-            add_bone(arm, 'Bone_copy', sel_bone.matrix, sel_bone.length * 1.5 )
+        # if not bone_exists(arm, bone_name):
+        #     add_bone(arm, 'Bone_copy', sel_bone.matrix, sel_bone.length * 1.5 )
         
         return {'FINISHED'}
                 

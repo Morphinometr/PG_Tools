@@ -60,7 +60,7 @@ def add_bone(armature : Armature, name : str, transform : Matrix, length : float
 
 def move_bones_to_layer(bones, layer : int):
     for bone in bones:
-        bone.layers[10]=True
+        bone.layers[layer]=True
         for l in range(32):
             if l == layer: 
                 continue

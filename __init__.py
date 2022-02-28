@@ -35,9 +35,9 @@ from bpy.types import (
 )
 
 bl_info = {
-    "name": "PixelGun Tools",
-    "author": "Morphin",
-    "version": (0, 0, 2),
+    "name": "Pixel Tools",
+    "author": "Kharkovschenko Konstantin",
+    "version": (0, 1, 0),
     "blender": (2, 80, 0),
     "description": "PixelGun pipeline tools",
     "location": "Addons Preferences",
@@ -48,7 +48,7 @@ bl_info = {
 
 from . import Operators, Panels, Menus
 
-class PixelGunToolsPreferences(AddonPreferences):
+class PixelToolsPreferences(AddonPreferences):
     bl_idname = __package__
 
     project_filepath : StringProperty(
@@ -73,9 +73,9 @@ class PixelGunToolsPreferences(AddonPreferences):
         # layout.prop(self, "boolean")
 
 
-class OBJECT_OT_pixelgun_tools_prefs(Operator):
+class OBJECT_OT_pixel_tools_prefs(Operator):
     """Display preferences"""
-    bl_idname = "pixel.pixelgun_tools_prefs"
+    bl_idname = "pixel.pixel_tools_prefs"
     bl_label = "Add-on Preferences"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -100,8 +100,8 @@ modules = (
 )
 
 classes = (
-    OBJECT_OT_pixelgun_tools_prefs,
-    PixelGunToolsPreferences,
+    OBJECT_OT_pixel_tools_prefs,
+    PixelToolsPreferences,
 
 )
     

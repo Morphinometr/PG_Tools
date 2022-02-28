@@ -11,7 +11,7 @@ class VIEW3D_PT_pixel_layout(Panel):
     bl_idname = "VIEW3D_PT_pixel_layout"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "PixelGun"
+    bl_category = "PixelTools"
     
     
     def draw(self, context):
@@ -40,7 +40,7 @@ class VIEW3D_PT_pixel_modeling(Panel):
     bl_idname = "VIEW3D_PT_pixel_modeling"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "PixelGun"
+    bl_category = "PixelTools"
     
     
     def draw(self, context):
@@ -94,7 +94,7 @@ class VIEW3D_PT_pixel_riging(Panel):
     bl_idname = "VIEW3D_PT_pixel_riging"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "PixelGun"
+    bl_category = "PixelTools"
     
     
     def draw(self, context):
@@ -118,11 +118,11 @@ class VIEW3D_PT_dev_panel(Panel):
     bl_idname = "VIEW3D_PT_dev_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "PixelGun"
+    bl_category = "PixelTools"
 
     def draw(self, context):
         layout = self.layout
-        # layout.operator("pixel.test")
+        layout.operator("pixel.test")
         layout.menu("pixel.control_bones_menu")
 
 
