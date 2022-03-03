@@ -192,11 +192,11 @@ class MESH_OT_test_texture(Operator):
         test_image_node.image = texture
         #test_image_node         #???
         
-        if addon_installed('Texel_Density'):
-            scene.td.custom_width = str(scene.pixel_tool.tex_size_custom_x)
-            scene.td.custom_height = str(scene.pixel_tool.tex_size_custom_y)
+        set_td_size(scene, scene.pixel_tool.tex_size_custom_x, scene.pixel_tool.tex_size_custom_y)
         
         return {'FINISHED'}
+
+    
     
 class MESH_OT_texture_pixel_filter(Operator):
     """Set pixel interpolation mode to "Closest" for all textures of selected objects"""
@@ -245,6 +245,25 @@ class MESH_OT_set_tex_desity(Operator):
     bl_idname = "mesh.set_tex_desity"
     bl_options = {'REGISTER', 'UNDO'}
     
+    size : EnumProperty(
+        name = 'Texture Dimentions', 
+        items = [('16', '16x16', ''),
+                 ('32', '32x32', ''),
+                 ('64', '64x64', ''),
+                 ('128', '128x128', ''),
+                 ('256', '256x256', ''),
+                 ('512', '512x512', ''),
+                 ('1024', '1024x1024', ''),
+                 ('2048', '2048x2048', ''),
+                 ('4096', '4096x4096', ''),
+                 ('custom', 'Custom', '')
+                ],
+        default = '64'
+        )
+        
+    tex_size_x : IntProperty(name="Custom texture size X", min = 1, default = 64 )
+    tex_size_y : IntProperty(name="Custom texture size Y", min = 1, default = 64 )
+    
     density : bpy.props.EnumProperty(
         name = 'Pixel Density',
         items = [('10', '10 px/m', ''),
@@ -267,6 +286,12 @@ class MESH_OT_set_tex_desity(Operator):
             
     
     def invoke(self, context, event):
+        scene = context.scene
+        pixel_tool = scene.pixel_tool
+        self.size = pixel_tool.tex_size
+        self.tex_size_x = pixel_tool.tex_size_custom_x
+        self.tex_size_y = pixel_tool.tex_size_custom_y
+
         self.density = context.scene.pixel_tool.px_density
         self.density_custom = context.scene.pixel_tool.px_density_custom
                     
@@ -274,9 +299,17 @@ class MESH_OT_set_tex_desity(Operator):
         
     def execute(self, context):
         scene = context.scene
+        pixel_tool = scene.pixel_tool
         scene.td.units = '1'
         scene.td.texture_size = '4'
         scene.td.set_method = '0'
+
+         #Custom tex size!
+        if self.size != 'custom':
+            self.tex_size_x = self.tex_size_y = int(self.size)
+            pixel_tool.tex_size_custom_x = pixel_tool.tex_size_custom_y = int(self.size)
+
+        set_td_size(scene, scene.pixel_tool.tex_size_custom_x, scene.pixel_tool.tex_size_custom_y)
 
         if scene.pixel_tool.px_density == 'custom':
             scene.td.density_set = str(scene.pixel_tool.px_density_custom)

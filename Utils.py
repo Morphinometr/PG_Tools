@@ -66,7 +66,10 @@ def move_bones_to_layer(bones, layer : int):
                 continue
             bone.layers[l] = False
                  
-        
+def set_td_size(scene, x, y):
+        if addon_installed('Texel_Density'):
+            scene.td.custom_width = str(x)
+            scene.td.custom_height = str(y)
 
 
 
