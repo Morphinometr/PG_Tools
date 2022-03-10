@@ -51,7 +51,7 @@ class pixel_properties(bpy.types.PropertyGroup):
 class MESH_OT_optimize(Operator):
     """Limited dissolve, weld and set sharp selected objects"""
     bl_label = "Optimize"
-    bl_idname = "mesh.optimize"
+    bl_idname = "pixel.optimize"
     bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
@@ -65,14 +65,24 @@ class MESH_OT_optimize(Operator):
                 )
     
     def execute(self, context):
-        optimize(context)
+        mod = context.object.mode
+        bpy.ops.object.mode_set_with_submode(mode='EDIT')
+        
+        bpy.ops.mesh.select_all(action='SELECT')
+        bpy.ops.mesh.dissolve_limited()
+        bpy.ops.mesh.remove_doubles()
+        bpy.ops.mesh.normals_tools(mode='RESET')
+        bpy.ops.mesh.mark_sharp(clear=True)
+        bpy.ops.mesh.faces_shade_flat()
+
+        bpy.ops.object.mode_set_with_submode(mode=mod)
        
         return {'FINISHED'}
 
 class MESH_OT_unwrap(Operator):
     """Unwrap mesh"""
     bl_label = "Unwrap"
-    bl_idname = "mesh.unwrap"
+    bl_idname = "pixel.unwrap"
     bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
@@ -86,14 +96,28 @@ class MESH_OT_unwrap(Operator):
                 )
             
     def execute(self, context):
-        unwrap(context)
+        mod = context.object.mode
+        bpy.ops.object.mode_set_with_submode(mode='EDIT')
+        
+        bpy.ops.mesh.select_mode(type="EDGE")
+        bpy.ops.mesh.select_all(action = 'DESELECT')
+        
+        bpy.ops.mesh.edges_select_sharp()
+        bpy.ops.mesh.mark_seam(clear=False)
+
+        #unwrap
+        bpy.ops.mesh.select_all(action = 'SELECT')
+        bpy.ops.uv.unwrap(method='ANGLE_BASED', margin=0)
+
+        
+        bpy.ops.object.mode_set_with_submode(mode=mod)
     
         return {'FINISHED'}
 
 class MESH_OT_test_material(Operator):
     """Add test meterial"""
     bl_label = "Test Material"
-    bl_idname = "mesh.test_material"
+    bl_idname = "pixel.test_material"
     bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
@@ -110,13 +134,13 @@ class MESH_OT_test_material(Operator):
                 
         if bpy.data.materials.find("Test Material") < 0:
             #create test material
-            test_mat = create_mat(self,context)
+            test_mat = create_mat("Test Material")
         else: test_mat = bpy.data.materials.get("Test Material")
         
             
         #append to selected objects
-        for arm in bpy.context.selected_objects :
-            arm.active_material = test_mat
+        for ob in bpy.context.selected_objects :
+            ob.active_material = test_mat
                    
         return {'FINISHED'}
     
@@ -124,7 +148,7 @@ class MESH_OT_test_material(Operator):
 class MESH_OT_test_texture(Operator):
     """Add test texture"""
     bl_label = "Set Texture"
-    bl_idname = "mesh.test_texture"
+    bl_idname = "pixel.test_texture"
     bl_options = {'REGISTER', 'UNDO'}
     
     size : EnumProperty(
@@ -181,27 +205,24 @@ class MESH_OT_test_texture(Operator):
             texture = bpy.ops.image.new(name= tex_name, width=self.tex_size_x, height=self.tex_size_y, generated_type='COLOR_GRID')
         
         test_mat = bpy.data.materials["Test Material"]
-        test_image_node = test_mat.node_tree.nodes["Image Texture"]
+        test_image_node = test_mat.node_tree.nodes["Image Texture"] #FIXME: take texture in 'base color' node
         test_image_node.image = bpy.data.images[tex_name]
         
         #bake texture add
         texture = bpy.data.images.new(name= 'Bake', width=self.tex_size_x, height=self.tex_size_y, alpha=True)
         texture.generated_color = (0, 0, 0, 0)
 
-        test_image_node = test_mat.node_tree.nodes["Image Texture.001"]
-        test_image_node.image = texture
-        #test_image_node         #???
+        bake_image_node = test_mat.node_tree.nodes["Bake"] #FIXME
+        bake_image_node.image = texture
         
         set_td_size(scene, scene.pixel_tool.tex_size_custom_x, scene.pixel_tool.tex_size_custom_y)
         
         return {'FINISHED'}
 
-    
-    
 class MESH_OT_texture_pixel_filter(Operator):
     """Set pixel interpolation mode to "Closest" for all textures of selected objects"""
     bl_label = "Make pixelated"
-    bl_idname = "mesh.texture_pixel_filter"
+    bl_idname = "pixel.texture_pixel_filter"
     bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
@@ -212,13 +233,11 @@ class MESH_OT_texture_pixel_filter(Operator):
             
     def execute(self, context):
         texture_pixel_filter(context)
-        
-        return {'FINISHED'}
  
 class MESH_OT_reload_textures(Operator):
-    """reload textures"""
+    """Reload textures"""
     bl_label = "Reload Textures"
-    bl_idname = "mesh.reload_textures"
+    bl_idname = "pixel.reload_textures"
     bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
@@ -233,7 +252,12 @@ class MESH_OT_reload_textures(Operator):
 #                )
             
     def execute(self, context):
-        reload_textures(context)
+        materials = get_materials(context)
+        textures = get_textures(materials)
+        
+        for tex in textures:
+            if tex.image is not None:
+                tex.image.reload()
     
         return {'FINISHED'}
     
@@ -242,7 +266,7 @@ class MESH_OT_reload_textures(Operator):
 class MESH_OT_set_tex_desity(Operator):
     """Set texel density for selected faces"""
     bl_label = "Set Texel Density"
-    bl_idname = "mesh.set_tex_desity"
+    bl_idname = "pixel.set_tex_desity"
     bl_options = {'REGISTER', 'UNDO'}
     
     size : EnumProperty(
@@ -344,8 +368,6 @@ class PIXEL_OT_import_weapon(Operator):
         return self.execute(context)
 
     def execute(self, context):
-        scene = context.scene
-        
         if context.collection != "Weapon":
             try: 
                 collection = bpy.data.collections['Weapon']
@@ -594,7 +616,6 @@ class PIXEL_OT_combine_rigs(Operator):
         bpy.ops.object.join()
         
         #rotate avatar arms
-        
         for bone in avatar_rig.data.bones:
             if bone.name.lower() == 'fps_player_arm_right':
                 weapon_arm_R = bone

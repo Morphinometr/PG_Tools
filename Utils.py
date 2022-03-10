@@ -72,40 +72,9 @@ def set_td_size(scene, x, y):
             scene.td.custom_height = str(y)
 
 
-
-def optimize(context):
-    """Dissolves inner faces, welds double vertices and sets mesh sharp"""
-    mod = context.object.mode
-    bpy.ops.object.mode_set_with_submode(mode='EDIT')
     
-    bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.mesh.dissolve_limited()
-    bpy.ops.mesh.remove_doubles()
-    bpy.ops.mesh.normals_tools(mode='RESET')
-    bpy.ops.mesh.mark_sharp(clear=True)
-    bpy.ops.mesh.faces_shade_flat()
-
-    bpy.ops.object.mode_set_with_submode(mode=mod)
-    
-def unwrap(context):
-    mod = context.object.mode
-    bpy.ops.object.mode_set_with_submode(mode='EDIT')
-    
-    bpy.ops.mesh.select_mode(type="EDGE")
-    bpy.ops.mesh.select_all(action = 'DESELECT')
-    
-    bpy.ops.mesh.edges_select_sharp()
-    bpy.ops.mesh.mark_seam(clear=False)
-
-    #unwrap
-    bpy.ops.mesh.select_all(action = 'SELECT')
-    bpy.ops.uv.unwrap(method='ANGLE_BASED', margin=0)
-
-    
-    bpy.ops.object.mode_set_with_submode(mode=mod)
-    
-def create_mat(self,context):
-    test_mat = bpy.data.materials.new(name="Test Material")
+def create_mat(name):
+    test_mat = bpy.data.materials.new(name)
     test_mat.use_nodes = True
     test_mat.use_fake_user = True
     test_mat.node_tree.nodes["Principled BSDF"].inputs[5].default_value = 0
@@ -120,29 +89,13 @@ def create_mat(self,context):
     test_image_node.interpolation = 'Closest'
     
     #bake texture
-    test_image_node = test_mat.node_tree.nodes.new("ShaderNodeTexImage")
-    test_image_node.location = (-350, 800)
-    test_image_node.interpolation = 'Closest'
+    bake_image_node = test_mat.node_tree.nodes.new("ShaderNodeTexImage")
+    bake_image_node.name = bake_image_node.label = "Bake"
+    bake_image_node.location = (-350, 500)
+    bake_image_node.interpolation = 'Closest'
 
     return test_mat
-
-def texture_pixel_filter(context):
-    materials = get_materials(context)
-    textures = get_textures(materials)
     
-    for mat in materials:
-        mat.node_tree.nodes["Principled BSDF"].inputs[5].default_value = 0
-
-    for tex in textures:   
-        tex.interpolation = 'Closest'
-
-def reload_textures(context):
-    materials = get_materials(context)
-    textures = get_textures(materials)
-    
-    for tex in textures:
-        tex.image.reload()
-
 def addon_installed(name):
     addons = bpy.context.preferences.addons.keys()
     for ad in addons:
@@ -168,9 +121,21 @@ def get_textures(materials):
     textures = []
     for mat in materials:
         for node in mat.node_tree.nodes:
-             if node.type == 'TEX_IMAGE':
-                 textures.append(node)
+            if node.type == 'TEX_IMAGE':
+                textures.append(node)
     return textures
+
+def texture_pixel_filter(context):
+    materials = get_materials(context)
+    textures = get_textures(materials)
+    
+    for mat in materials:
+        mat.node_tree.nodes["Principled BSDF"].inputs[5].default_value = 0
+
+    for tex in textures:   
+        tex.interpolation = 'Closest'
+        
+        return {'FINISHED'}
 
 def flatten_materials(context):
     materials = get_materials(context)
