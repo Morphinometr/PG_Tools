@@ -48,21 +48,21 @@ class VIEW3D_PT_pixel_modeling(Panel):
         scene = context.scene
         pixel_tool = scene.pixel_tool
 
-        layout.operator("mesh.texture_pixel_filter")  
-        layout.operator("mesh.optimize")
-        layout.operator("mesh.test_material")
+        layout.operator("pixel.texture_pixel_filter")  
+        layout.operator("pixel.optimize")
+        layout.operator("pixel.test_material")
                 
         column = layout.column(align=True)
         row = column.row(align = True)
         
-        row.operator("mesh.test_texture")
+        row.operator("pixel.test_texture")
         row.prop(pixel_tool, 'tex_size', text='')
         if scene.pixel_tool.tex_size == 'custom':
             row = column.row(align = True) 
             row.prop(pixel_tool, 'tex_size_custom_x', text='')
             row.prop(pixel_tool, 'tex_size_custom_y', text='')
         
-        layout.operator("mesh.unwrap")
+        layout.operator("pixel.unwrap")
         
         
         box = layout.box()
@@ -70,7 +70,7 @@ class VIEW3D_PT_pixel_modeling(Panel):
             column = box.column(align=True)
             row = column.row(align = True)
             
-            row.operator("mesh.set_tex_desity")
+            row.operator("pixel.set_tex_desity")
             row.prop(pixel_tool, 'px_density', text='')
             
             if scene.pixel_tool.px_density == 'custom':
@@ -83,7 +83,7 @@ class VIEW3D_PT_pixel_modeling(Panel):
         else:
             box.label(text = '"Texel Density" addon not found')
             
-        layout.operator("mesh.reload_textures")
+        layout.operator("pixel.reload_textures")
 
 #   Riging
        
