@@ -144,7 +144,6 @@ class MESH_OT_test_material(Operator):
                    
         return {'FINISHED'}
     
-    
 class MESH_OT_test_texture(Operator):
     """Add test texture"""
     bl_label = "Set Texture"
@@ -233,6 +232,8 @@ class MESH_OT_texture_pixel_filter(Operator):
             
     def execute(self, context):
         texture_pixel_filter(context)
+        
+        return {'FINISHED'}
  
 class MESH_OT_reload_textures(Operator):
     """Reload textures"""
@@ -347,7 +348,7 @@ class MESH_OT_set_tex_desity(Operator):
                
 #   Layout
 
-#   Import Weapon
+#   Import
 class PIXEL_OT_import_weapon(Operator):
     """Import Weapon by its Tag"""
     bl_label = "Import Weapon"
@@ -584,7 +585,6 @@ class PIXEL_OT_fix_import(Operator):
         
         return {'FINISHED'}
     
-    
 #   Combine rigs for presentation 
 class PIXEL_OT_combine_rigs(Operator):
     """Combine weapon rig (selected) with main avatar rig (active)"""
@@ -628,7 +628,6 @@ class PIXEL_OT_combine_rigs(Operator):
         
         
         #TODO: Make rotations via transform matrix
-        #some dirty code !!!
         bpy.ops.object.mode_set_with_submode(mode='POSE')
         for bone in avatar_rig.pose.bones:
             bone.bone.select = False
@@ -637,22 +636,23 @@ class PIXEL_OT_combine_rigs(Operator):
         bpy.data.armatures[avatar_rig.data.name].layers[10] = True
         
         
-        #right arm rotation
-        avatar_rig.data.bones.active = avatar_rig.pose.bones[weapon_arm_R.name].bone
-        avatar_rig.pose.bones[avatar_arm_R.name].bone.select = True
-        bpy.ops.pose.copy_pose_vis_rot()
-        
-        avatar_rig.pose.bones[weapon_arm_R.name].bone.select = False
-        bpy.ops.transform.rotate(value=-3.14159, orient_axis='X', orient_type='LOCAL')
-        avatar_rig.pose.bones[avatar_arm_R.name].bone.select = False
-        #left arm rotation
-        avatar_rig.data.bones.active = avatar_rig.pose.bones[weapon_arm_L.name].bone
-        avatar_rig.pose.bones[avatar_arm_L.name].bone.select = True
-        bpy.ops.pose.copy_pose_vis_rot()
-        
-        avatar_rig.pose.bones[weapon_arm_L.name].bone.select = False
-        bpy.ops.transform.rotate(value=1.5708, orient_axis='X', orient_type='LOCAL')
-        avatar_rig.pose.bones[avatar_arm_L.name].bone.select = False
+        if addon_installed('space_view3d_copy_attributes'):
+            #right arm rotation
+            avatar_rig.data.bones.active = avatar_rig.pose.bones[weapon_arm_R.name].bone
+            avatar_rig.pose.bones[avatar_arm_R.name].bone.select = True
+            bpy.ops.pose.copy_pose_vis_rot()
+            
+            avatar_rig.pose.bones[weapon_arm_R.name].bone.select = False
+            bpy.ops.transform.rotate(value=-3.14159, orient_axis='X', orient_type='LOCAL')
+            avatar_rig.pose.bones[avatar_arm_R.name].bone.select = False
+            #left arm rotation
+            avatar_rig.data.bones.active = avatar_rig.pose.bones[weapon_arm_L.name].bone
+            avatar_rig.pose.bones[avatar_arm_L.name].bone.select = True
+            bpy.ops.pose.copy_pose_vis_rot()
+            
+            avatar_rig.pose.bones[weapon_arm_L.name].bone.select = False
+            bpy.ops.transform.rotate(value=1.5708, orient_axis='X', orient_type='LOCAL')
+            avatar_rig.pose.bones[avatar_arm_L.name].bone.select = False
         
         
         
@@ -723,7 +723,7 @@ class PIXEL_OT_combine_rigs(Operator):
 
 #   Create bone with proper scene scaling
 class PIXEL_OT_add_bone(Operator):
-    """ """
+    """Create bone with proper scene scaling"""
     bl_label = "Add Bone"
     bl_idname = "pixel.add_bone"
     bl_options = {'REGISTER', 'UNDO'}
@@ -745,8 +745,6 @@ class PIXEL_OT_add_bone(Operator):
         add_bone(arm, 'Bone', mat, self.lenght / context.scene.unit_settings.scale_length)
         
         return {'FINISHED'}
-
-
 
 
 #   Create simple controls

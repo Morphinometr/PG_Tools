@@ -27,8 +27,6 @@ def recurLayerCollection(layerColl, collName):
 #        layerColl = recurLayerCollection(layer_collection, i.name)
 #        bpy.context.view_layer.active_layer_collection = layerColl
 
-
-
 def obj_exists(name : str):
     for ob in bpy.data.objects:
         if ob.name == name:
@@ -114,7 +112,6 @@ def get_materials(context):
         for slot in ob.material_slots:
             if slot.material not in materials:
                 materials.append(slot.material) 
-    
     return materials
     
 def get_textures(materials):
@@ -128,14 +125,14 @@ def get_textures(materials):
 def texture_pixel_filter(context):
     materials = get_materials(context)
     textures = get_textures(materials)
-    
-    for mat in materials:
-        mat.node_tree.nodes["Principled BSDF"].inputs[5].default_value = 0
 
-    for tex in textures:   
+    for mat in materials:
+        mat.node_tree.nodes["Principled BSDF"].inputs[6].default_value = 0 # 6 - Metallic 
+    
+    for tex in textures:
         tex.interpolation = 'Closest'
-        
-        return {'FINISHED'}
+
+    return {'FINISHED'}
 
 def flatten_materials(context):
     materials = get_materials(context)

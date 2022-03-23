@@ -1,6 +1,6 @@
 import bpy
 from bpy.types import Panel
-from .Operators import addon_installed
+from .Utils import addon_installed
 
 #   Layout
        
@@ -29,6 +29,9 @@ class VIEW3D_PT_pixel_layout(Panel):
         layout.operator("pixel.import_avatar")
         layout.operator("pixel.import_weapon")
         layout.operator("pixel.fix_import")
+
+        if not addon_installed('space_view3d_copy_attributes'):
+            layout.label(text='Please enable "Interface: Copy Attributes Menu" addon to automatically rotate avatar arms to match weapon arms', icon = 'ERROR')
         layout.operator("pixel.combine_rigs")
 
 #   Modeling
@@ -74,12 +77,7 @@ class VIEW3D_PT_pixel_modeling(Panel):
             row.prop(pixel_tool, 'px_density', text='')
             
             if scene.pixel_tool.px_density == 'custom':
-                column.prop(pixel_tool, 'px_density_custom', text='')
-            
-            
-            
-            
-            
+                column.prop(pixel_tool, 'px_density_custom', text='')     
         else:
             box.label(text = '"Texel Density" addon not found')
             
