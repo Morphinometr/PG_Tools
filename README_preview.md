@@ -1,3 +1,3 @@
 # Pixel Tools
 ## Layout
-![alt text](images/prefences.png)
+![Preferences](https://github.com/Morphinometr/Pixel_Tools/blob/readme/images/preferences.png)
