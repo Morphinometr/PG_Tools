@@ -1,3 +1,1 @@
-# Pixel Tools
-## Layout
-![alt text](images/prefences.png)
+# Pixel_Tools
