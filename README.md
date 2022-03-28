@@ -2,7 +2,10 @@
 ## Preferences
 ![Preferences](https://github.com/Morphinometr/Pixel_Tools/blob/readme/images/preferences.png)
 
-Укажите путь к проекту на вашем компьютере
+Укажите путь к проекту на вашем компьютере.
+
+Для полноценной работы необходимо включить стандартный аддон Interface: Copy Attributes Menu. А также установить аддон Import-Export: Better FBX Importer & Exporter.
+
 ## Layout
 ![Layout](https://github.com/Morphinometr/Pixel_Tools/blob/readme/images/layout.png)
 
@@ -17,7 +20,7 @@
 * "Import Avatar" - импортирует fbx аватара и ищет связанные с ним текстуры. Также по-умолчанию пикселизирует все его текстуры и настраивает материал чтобы при рендере выглядел плоским (убирает металичность, спекуляр и эмиссию).
   > *Если fbx ссылается на png текстуру, а в проекте только psd она найдена не будет*
 
-* "Import Weapon" - то же что и для аватара, только для оружия
+* "Import Weapon" - то же что и для аватара, только для оружия.
 
 * "Fix Imported Rig" - правит косяк когда Better Exporter импортирует риг как ротомка пустышки. Этот оператор убирает родителя, на его месте создает кость и убирает клю анимации с объекта арматуры.
   > *При импорте из Maya новая кость имеет неправильную ориентацию. Нужно перепроверять в проекте
@@ -28,6 +31,7 @@
 ## Modeling
 ![Modeling](https://github.com/Morphinometr/Pixel_Tools/blob/readme/images/modeling.png)
 
+* "Make pixelated"
 
 ## Rigging
 ![Rigging](https://github.com/Morphinometr/Pixel_Tools/blob/readme/images/rigging.png)
