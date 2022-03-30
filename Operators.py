@@ -7,7 +7,7 @@ from .Menus import *
 
 #   Custom properties
 
-class pixel_properties(bpy.types.PropertyGroup):
+class PIXEL_properties(bpy.types.PropertyGroup):
     
     tex_size : EnumProperty(
         name = 'Texture Dimentions', 
@@ -48,7 +48,7 @@ class pixel_properties(bpy.types.PropertyGroup):
 
 #   Operators    
 
-class MESH_OT_optimize(Operator):
+class PIXEL_OT_optimize(Operator):
     """Limited dissolve, weld and set sharp selected objects"""
     bl_label = "Optimize"
     bl_idname = "pixel.optimize"
@@ -79,7 +79,7 @@ class MESH_OT_optimize(Operator):
        
         return {'FINISHED'}
 
-class MESH_OT_unwrap(Operator):
+class PIXEL_OT_unwrap(Operator):
     """Unwrap mesh"""
     bl_label = "Unwrap"
     bl_idname = "pixel.unwrap"
@@ -114,7 +114,7 @@ class MESH_OT_unwrap(Operator):
     
         return {'FINISHED'}
 
-class MESH_OT_test_material(Operator):
+class PIXEL_OT_test_material(Operator):
     """Add test meterial"""
     bl_label = "Test Material"
     bl_idname = "pixel.test_material"
@@ -144,7 +144,7 @@ class MESH_OT_test_material(Operator):
                    
         return {'FINISHED'}
     
-class MESH_OT_test_texture(Operator):
+class PIXEL_OT_test_texture(Operator):
     """Add test texture"""
     bl_label = "Set Texture"
     bl_idname = "pixel.test_texture"
@@ -218,7 +218,7 @@ class MESH_OT_test_texture(Operator):
         
         return {'FINISHED'}
 
-class MESH_OT_texture_pixel_filter(Operator):
+class PIXEL_OT_texture_pixel_filter(Operator):
     """Set pixel interpolation mode to "Closest" for all textures of selected objects"""
     bl_label = "Make pixelated"
     bl_idname = "pixel.texture_pixel_filter"
@@ -235,7 +235,7 @@ class MESH_OT_texture_pixel_filter(Operator):
         
         return {'FINISHED'}
  
-class MESH_OT_reload_textures(Operator):
+class PIXEL_OT_reload_textures(Operator):
     """Reload textures"""
     bl_label = "Reload Textures"
     bl_idname = "pixel.reload_textures"
@@ -264,7 +264,7 @@ class MESH_OT_reload_textures(Operator):
     
 #   Interaraction with texel density addon
 
-class MESH_OT_set_tex_desity(Operator):
+class PIXEL_OT_set_tex_desity(Operator):
     """Set texel density for selected faces"""
     bl_label = "Set Texel Density"
     bl_idname = "pixel.set_tex_desity"
@@ -395,7 +395,7 @@ class PIXEL_OT_import_weapon(Operator):
                                   my_import_normal='Import', 
                                   use_auto_smooth=False, 
                                   my_scale=1, 
-                                  use_reset_mesh_origin=False)
+                                  use_reset_PIXEL_origin=False)
         
         for path in textures_paths:
             bpy.ops.file.find_missing_files(directory=path)
@@ -456,7 +456,7 @@ class PIXEL_OT_import_avatar(Operator):
                                   my_import_normal='Import', 
                                   use_auto_smooth=False, 
                                   my_scale=1, 
-                                  use_reset_mesh_origin=False)
+                                  use_reset_PIXEL_origin=False)
         
         for path in textures_paths:
             bpy.ops.file.find_missing_files(directory=path)
@@ -843,14 +843,14 @@ class PIXEL_OT_test(Operator):
 #   Registration
 
 classes = (
-    pixel_properties,
-    MESH_OT_optimize,
-    MESH_OT_unwrap,
-    MESH_OT_test_material,
-    MESH_OT_test_texture,
-    MESH_OT_texture_pixel_filter,
-    MESH_OT_set_tex_desity,
-    MESH_OT_reload_textures,
+    PIXEL_properties,
+    PIXEL_OT_optimize,
+    PIXEL_OT_unwrap,
+    PIXEL_OT_test_material,
+    PIXEL_OT_test_texture,
+    PIXEL_OT_texture_pixel_filter,
+    PIXEL_OT_set_tex_desity,
+    PIXEL_OT_reload_textures,
     PIXEL_OT_import_avatar,
     PIXEL_OT_import_weapon,
     PIXEL_OT_fix_import,
@@ -865,7 +865,7 @@ classes = (
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-    bpy.types.Scene.pixel_tool = bpy.props.PointerProperty(type = pixel_properties)
+    bpy.types.Scene.pixel_tool = bpy.props.PointerProperty(type = PIXEL_properties)
 
 def unregister():
     del bpy.types.Scene.pixel_tool
