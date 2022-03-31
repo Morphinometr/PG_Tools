@@ -395,7 +395,7 @@ class PIXEL_OT_import_weapon(Operator):
                                   my_import_normal='Import', 
                                   use_auto_smooth=False, 
                                   my_scale=1, 
-                                  use_reset_PIXEL_origin=False)
+                                  use_reset_mesh_origin=False)
         
         for path in textures_paths:
             bpy.ops.file.find_missing_files(directory=path)
@@ -456,7 +456,7 @@ class PIXEL_OT_import_avatar(Operator):
                                   my_import_normal='Import', 
                                   use_auto_smooth=False, 
                                   my_scale=1, 
-                                  use_reset_PIXEL_origin=False)
+                                  use_reset_mesh_origin=False)
         
         for path in textures_paths:
             bpy.ops.file.find_missing_files(directory=path)
