@@ -509,6 +509,16 @@ class PIXEL_OT_fix_import(Operator):
             self.report({'ERROR'}, 'Armature not found')
             return {'CANCELLED'}
         
+        #delete keyframes from armature object
+        try:
+            for f in range(int(armature.animation_data.action.frame_range[0]), int(armature.animation_data.action.frame_range[1]+1)):
+                armature.keyframe_delete('location', frame=f)
+                armature.keyframe_delete('rotation_quaternion', frame=f)
+                armature.keyframe_delete('scale', frame=f)
+        except:
+            pass
+        
+        #
         if armature.parent == None:
             self.report({'ERROR'}, 'Armature has no parent')
             return {'CANCELLED'} 
@@ -549,16 +559,6 @@ class PIXEL_OT_fix_import(Operator):
         
         #exit Edit Mode
         bpy.ops.object.mode_set_with_submode(mode=mod)
-    
-        
-        #delete keyframes from armature object
-        try:
-            for f in range(int(armature.animation_data.action.frame_range[0]), int(armature.animation_data.action.frame_range[1]+1)):
-                armature.keyframe_delete('location', frame=f)
-                armature.keyframe_delete('rotation_quaternion', frame=f)
-                armature.keyframe_delete('scale', frame=f)
-        except:
-            pass
 
         #clear parenting and keep location
         parent = armature.parent
