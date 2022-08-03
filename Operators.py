@@ -703,9 +703,13 @@ class PIXEL_OT_combine_rigs(Operator):
             inner.name = inner.name[0:6] + num + inner.name[10:]
             
         if context.scene.pixel_tool.avatar_tag != '':
-            avatar.name = context.scene.pixel_tool.avatar_tag
-             
+            try: 
+                avatar.name = context.scene.pixel_tool.avatar_tag
+            except:
+                self.report({'WARNING'}, "Couldn't find Avatar. Avatar bone not renamed")
+                
         #pin weapon mesh to avatar rig
+        weapon_mesh = None
         for name, ob in bpy.data.objects.items():
             if ob.type == 'MESH' and name.startswith(weapon_tag): #not all weapon meshes has '_mesh' postfix
                 weapon_mesh = ob
