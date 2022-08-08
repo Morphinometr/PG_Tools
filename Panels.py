@@ -1,3 +1,4 @@
+from msilib.schema import Icon
 import bpy
 from bpy.types import Panel
 from .Utils import addon_installed
@@ -50,6 +51,10 @@ class VIEW3D_PT_pixel_modeling(Panel):
         layout = self.layout
         scene = context.scene
         pixel_tool = scene.pixel_tool
+
+        row = layout.row(align = True)
+        row.operator("pixel.find_instances")
+        row.operator("pixel.reset_ob_colors", text = "", icon = "CANCEL") 
 
         layout.operator("pixel.texture_pixel_filter")  
         layout.operator("pixel.optimize")

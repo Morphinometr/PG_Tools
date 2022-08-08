@@ -1,4 +1,4 @@
-import bpy, math
+import bpy, random
 from mathutils import Matrix, Vector
 from bpy.types import Object, Armature
 
@@ -139,6 +139,31 @@ def flatten_materials(context):
     for mat in materials:
         for i in (6,7,20): # 6 - Metallic, 7 - Specular, 20 - Emission
             mat.node_tree.nodes["Principled BSDF"].inputs[i].default_value = 0
+
+def random_color(steps, alpha=1):
+    return (randvalue(steps),randvalue(steps),randvalue(steps),alpha)
+
+def randvalue(steps):
+    return random.randrange(steps+1)/steps
+
+def color_list(length, steps=10, alpha=1):
+    lst = []
+    success = False
+    # seed = random.randrange(1000000)
+    for i in range(length):
+        for c in range(1000):    
+            col = random_color(steps, alpha)
+            if col not in lst and col != (1,1,1, alpha):
+                success = True
+                lst.append(col)
+                break
+            else:
+                success = False
+        if success:
+            continue
+        else:    
+            raise ValueError("Too many instanciated objects. Couldn't create enough color variants. Try to increase 'Color steps' parameter")
+    return lst
 
 
     

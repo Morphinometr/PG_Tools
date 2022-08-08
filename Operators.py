@@ -39,6 +39,7 @@ class PIXEL_properties(bpy.types.PropertyGroup):
     px_density_custom : FloatProperty(name="Custom Pixel Density", min = 0 )
     tex_size_custom_y : IntProperty(name="Custom texture size Y", min = 1, default = 64 )
     tex_size_custom_x : IntProperty(name="Custom texture size X", min = 1, default = 64 )
+    reset_colors : BoolProperty(name="Reset Colors", default = False)
     
     weapon_tag : StringProperty(name="Weapon Tag", default = "")
     weapon_number : StringProperty(name="Weapon Number", default = "")
@@ -47,6 +48,67 @@ class PIXEL_properties(bpy.types.PropertyGroup):
     
 
 #   Operators    
+#   Modeling
+
+class PIXEL_OT_find_instances(Operator):
+    """Detects objects that shares data mesh and assignes random object color"""
+    bl_label = "Find Instances"
+    bl_idname = "pixel.find_instances"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    reset_colors : BoolProperty(name="Reset Colors", default = False)
+
+    def invoke(self, context, event):
+        self.reset_colors = context.scene.pixel_tool.reset_colors
+                            
+        return self.execute(context)
+
+    def execute(self, context):
+        meshes = []
+        context.scene.pixel_tool.reset_colors = self.reset_colors
+        
+        #instantiated_meshes = [mesh if mesh.users > 1 else pass for mesh in bpy.data.meshes]
+        #[print(i) for i in x if i>3 ]
+        for mesh, data in bpy.data.meshes.items():
+            if bpy.data.meshes[mesh].users > 1:
+                meshes.append(mesh)
+                
+        #Calculate how many color steps we need to cover all variations 
+        col_steps = ((len(meshes) + 1) ** (1/3) ) // 1 
+        
+        if self.reset_colors:
+            bpy.ops.pixel.reset_ob_colors()
+
+        try:
+            col_lst = color_list(len(meshes), col_steps)
+        except ValueError as ex:
+            self.report({'ERROR'}, str(ex))
+            return {'CANCELLED'}
+        
+        
+        color_dict = dict(zip(meshes, col_lst))
+
+        for ob in context.scene.objects:
+            if ob.data.name in color_dict.keys():
+                ob.color = color_dict[ob.data.name]
+                ob.select_set(True)
+        
+        context.space_data.shading.color_type = 'OBJECT'
+
+        return {'FINISHED'}
+
+class PIXEL_OT_reset_ob_colors(Operator):
+    """Resets all object colors in the scene"""
+    bl_label = "Reset Object Colors"
+    bl_idname = "pixel.reset_ob_colors"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        for ob in context.scene.objects:
+            ob.color = (1,1,1,1)
+        
+        return {'FINISHED'}
+
 
 class PIXEL_OT_optimize(Operator):
     """Limited dissolve, weld and set sharp selected objects"""
@@ -848,6 +910,8 @@ class PIXEL_OT_test(Operator):
 
 classes = (
     PIXEL_properties,
+    PIXEL_OT_find_instances,
+    PIXEL_OT_reset_ob_colors,
     PIXEL_OT_optimize,
     PIXEL_OT_unwrap,
     PIXEL_OT_test_material,
