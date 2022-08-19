@@ -1,3 +1,4 @@
+from logging import NullHandler
 import bpy, mathutils
 from bpy.types import Operator
 from bpy.props import EnumProperty, BoolProperty, IntProperty, FloatProperty, StringProperty
@@ -659,7 +660,7 @@ class PIXEL_OT_combine_rigs(Operator):
     def poll(cls, context):
         if bpy.context.active_object is None :
             return False
-        if len(context.selected_objects) < 2 or len(context.selected_objects) >3:
+        if len(context.selected_objects) != 2 :
             return False
         for arm in context.selected_objects:
             if arm.type != 'ARMATURE':
@@ -734,6 +735,7 @@ class PIXEL_OT_combine_rigs(Operator):
         #parenting weapon root bone to its proper parent in avatar rig
         bpy.ops.object.mode_set_with_submode(mode='EDIT')
         
+        """
         character_holder = avatar_rig.data.edit_bones['CharacterHolder']
         
         #weap_prefab == ContentPres_weaponXXXX
@@ -752,21 +754,33 @@ class PIXEL_OT_combine_rigs(Operator):
             if bone.name.find('Weapon') > -1:
                 inner = bone
                 break
+        """
+        for bone in avatar_rig.data.edit_bones:
+            if bone.get("bone_id") is not None:
+                if bone.get("bone_id") == "avatar_root":
+                    avatar = bone
+                if bone.get("bone_id") == "weapon_number":
+                    weapon = bone
+                if bone.get("bone_id") == "weapon_inner":
+                    inner = bone
         
-        weapon_tag = context.scene.pixel_tool.weapon_tag
+        weapon_tag = str(context.scene.pixel_tool.weapon_tag)
         avatar_rig.data.edit_bones[weapon_tag].parent = inner
         bpy.ops.object.mode_set_with_submode(mode='OBJECT')
         
         #rename bones
-        num = context.scene.pixel_tool.weapon_number
-        if context.scene.pixel_tool.weapon_number != '':
-            weap_prefab.name = weap_prefab.name[0:-4] + num
-            weapon.name = weapon.name[0:-4] + num
-            inner.name = inner.name[0:6] + num + inner.name[10:]
+        num = str(context.scene.pixel_tool.weapon_number)
+        if num != '':
+            #weap_prefab.name = weap_prefab.name[0:-4] + num
+            print(weapon.name)
+            weapon.name = str(weapon.name)[0:-4] + num
+            print(weapon.name)
+            inner.name = str(inner.name)[0:6] + num + str(inner.name)[10:]
             
-        if context.scene.pixel_tool.avatar_tag != '':
+        avatar_name = str(context.scene.pixel_tool.avatar_tag)
+        if avatar_name != '':
             try: 
-                avatar.name = context.scene.pixel_tool.avatar_tag
+                avatar.name = avatar_name
             except:
                 self.report({'WARNING'}, "Couldn't find Avatar. Avatar bone not renamed")
                 
