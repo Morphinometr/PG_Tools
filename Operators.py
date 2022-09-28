@@ -1,6 +1,6 @@
 import bpy, mathutils
 from bpy.types import Operator
-from bpy.props import EnumProperty, BoolProperty, IntProperty, FloatProperty, StringProperty
+from bpy.props import EnumProperty, BoolProperty, IntProperty, FloatProperty, StringProperty, BoolVectorProperty
 from .Utils import *
 
 #   Custom properties
@@ -806,7 +806,7 @@ class PG_OT_add_bone(Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     name : StringProperty(name="Name", default= "Bone")
-    length : FloatProperty(name = 'Length', default = 1 , min = 0, unit= "LENGTH")
+    length : FloatProperty(name = 'Length', min = 0, unit= "LENGTH")
     y_up : BoolProperty(name= "Y up", default= False)
 
     @classmethod
@@ -849,9 +849,9 @@ class PG_OT_simple_controls(Operator):
     bl_idname = "pg.create_simple_controls"
     bl_options = {'REGISTER', 'UNDO'}
 
-    ctrl_layer : IntProperty(name = "CTRL Bones Layer", description = "Layer To Place Control Bones", min = 0, max = 31)
+    ctrl_layer : BoolVectorProperty(name= "Layer", subtype= "LAYER", size= 32)
     set_wgt : BoolProperty(name = "Set Widgets", description = "Set Cube Widgets for Control Bones", default = False)
-    wgt_size : FloatProperty(name= "Widget Size", default= 1, unit= "LENGTH")
+    wgt_size : FloatProperty(name= "Widget Size", min= 0, soft_max= 1000, default= 1, unit= "LENGTH")
     
     # TODO:
     # adaptive_wgt : BoolProperty(name = "Adaptive WGTs", description = "", default = True)
@@ -867,6 +867,16 @@ class PG_OT_simple_controls(Operator):
     def invoke(self, context, event):
         self.wgt_size = 1 / context.scene.unit_settings.scale_length
         return context.window_manager.invoke_props_dialog(self)
+    
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "ctrl_layer", text= "CTRL Bone Layer (Optional)")
+        
+        layout.use_property_split = True
+        layout.use_property_decorate = True
+        layout.prop(self, "set_wgt")
+        layout.prop(self, "wgt_size")
+
 
     def execute(self, context):
         avatar_rig = context.active_object
@@ -880,6 +890,8 @@ class PG_OT_simple_controls(Operator):
             bpy.ops.object.select_all(action='DESELECT')
             context.view_layer.objects.active = avatar_rig
             context.active_object.select_set(True)
+        else:
+            widget = bpy.data.objects['WGT_Cube']
         
         bpy.ops.object.mode_set_with_submode(mode='EDIT')
         for bone in context.selected_bones:
@@ -896,8 +908,8 @@ class PG_OT_simple_controls(Operator):
             
             bone_pairs[bone.name] = ctrl_bone.name  #Solves issue if name already existed
     
-    
-        move_bones_to_layer(context.selected_bones, self.ctrl_layer)
+        for bone in context.selected_bones:
+            bone.layers = self.ctrl_layer
 
         # Relations
         for bone in def_bones:
@@ -953,7 +965,18 @@ class PG_OT_add_space_switching(Operator):
         self.target = context.active_bone.name
         return context.window_manager.invoke_props_dialog(self)
 
-    #TODO
+    def draw(self, context):
+        scene = context.scene
+
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = True
+        #row = layout.row(align = True)
+
+        layout.label(text= "Target: " + self.target)
+        layout.prop_search(self, "bone1", bpy.data.objects[self.armature].pose, "bones", text="")
+        layout.prop_search(self, "bone2", bpy.data.objects[self.armature].pose, "bones", text="")
+
     def execute(self, context):
         own_armature = context.active_object
         active_bone_name = self.target
@@ -996,19 +1019,7 @@ class PG_OT_add_space_switching(Operator):
         
         return {"FINISHED"}
     
-    def draw(self, context):
-        scene = context.scene
-
-        layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = True
-        #row = layout.row(align = True)
-
-        layout.label(text= "Target: " + self.target)
-        layout.prop_search(self, "bone1", bpy.data.objects[self.armature].pose, "bones", text="")
-        layout.prop_search(self, "bone2", bpy.data.objects[self.armature].pose, "bones", text="")
-
-    
+       
 
 
 
