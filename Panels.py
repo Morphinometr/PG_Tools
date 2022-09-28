@@ -108,7 +108,7 @@ class VIEW3D_PT_pg_riging(Panel):
 
         col.operator("pg.add_bone")
         col.operator("pg.create_simple_controls")
-        col.operator("wm.add_space_switching")
+        col.operator("pg.add_space_switching")
         
 
 #   Dev

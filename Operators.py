@@ -487,7 +487,7 @@ class PG_OT_import_avatar(Operator):
         return context.area.type == 'VIEW_3D'
 
     def invoke(self, context, event):
-        self.avatar_tag = context.scene.pixel_tool.avatar_tag
+        self.avatar_tag = context.scene.pg_tool.avatar_tag
                     
         return self.execute(context)
 
@@ -903,22 +903,14 @@ class PG_OT_simple_controls(Operator):
 class PG_OT_add_space_switching(Operator):
     """Set Space Switching"""
     bl_label = "Add Space Switching"
-    bl_idname = "wm.add_space_switching"
+    bl_idname = "pg.add_space_switching"
     bl_options = {'REGISTER', 'UNDO'}
 
     #ctrl_layer : IntProperty(name = "CTRL Bones Layer", description = "Layer To Place Control Bones", min = 0, max = 31)
     #set_wgt : BoolProperty(name = "Set Widgets", description = "Set Cube Widgets for Control Bones", default = False)
     
-    text = StringProperty(name="text")
-
-    def invoke(self, context, event):
-        return context.window_manager.invoke_props_dialog(self)
-
-    def execute(self, context):
-        
-        
-        return {"FINISHED"}
-    
+    text : StringProperty(name="TEXT")
+    a : FloatProperty(name="a")
 
     @classmethod
     def poll(cls, context):
@@ -931,9 +923,60 @@ class PG_OT_add_space_switching(Operator):
         if not addon_installed("space_switcher"):
             return False
         return True
+ 
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
 
+    #TODO
+    def execute(self, context):
+        spaces = "World", "Arm_R", "Arm_L"
+        active_bone_name = bpy.context.active_bone.name
+        armature = bpy.context.active_object
+        bone = armature.pose.bones[active_bone_name]
+
+        prop_name = active_bone_name + "_parent"
+        bone[prop_name] = 0
+
+        #bpy.ops.wm.properties_edit(data_path="active_pose_bone", property_name=prop_name, property_type='INT', is_overridable_library=True, description="", min_int=0, max_int=2147483647, step_int=1)
+
+        switcher = armature.data.space_switcher.space_switches.add()
+        switcher.name = prop_name
+        datapath = 'pose.bones["%s"]["%s"]' % (active_bone_name, prop_name)
+        switcher.property_datapath = datapath
+        switcher.space_switch_type = "ENUM"
+        switcher.enum_type_properties.bones.add()
+        switcher.enum_type_properties.bones[0].name = active_bone_name
+        for space in spaces:
+            sp = switcher.enum_type_properties.spaces.add()
+            sp.name = space
+
+        constrain = bone.constraints.new(type = "ARMATURE")
+        con_spaces = spaces[1:]
+
+        for num in range(len(con_spaces)):
+            constrain.targets.new()
+            constrain.targets[num].target = armature
+            constrain.targets[num].subtarget = con_spaces[num]
+            
+            drv = constrain.targets[num].driver_add("weight")
+            drv.driver.type = "SCRIPTED"
+            var = drv.driver.variables.new()
+            var.name = "parent"
+            var.targets[0].id_type = "OBJECT"
+            var.targets[0].id = armature
+            var.targets[0].data_path = datapath
+            drv.driver.expression = "parent == %d" % (num + 1) 
     
+        
+        return {"FINISHED"}
+    
+    def draw(self, context):
+        layout = self.layout
+        #row = layout.row(align = True)
 
+        layout.label(text= "Target: " + str(context.active_bone.name))
+        layout.prop(self, "text")
+        layout.prop(self, "a")
 
 
 class PG_OT_test(Operator):
