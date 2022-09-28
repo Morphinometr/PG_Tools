@@ -1,4 +1,5 @@
 from logging import NullHandler
+from multiprocessing import context
 import bpy, mathutils
 from bpy.types import Operator
 from bpy.props import EnumProperty, BoolProperty, IntProperty, FloatProperty, StringProperty
@@ -808,7 +809,9 @@ class PG_OT_add_bone(Operator):
     bl_idname = "pg.add_bone"
     bl_options = {'REGISTER', 'UNDO'}
 
+    name : StringProperty(name="Name", default= "Bone")
     lenght : FloatProperty(name = 'Lenght', default = 1, min = 0)
+    y_up : BoolProperty(name= "Y up", default= False)
 
     @classmethod
     def poll(cls, context):
@@ -818,12 +821,21 @@ class PG_OT_add_bone(Operator):
             return False        
         return True
 
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
     def execute(self, context):
+        mod = context.object.mode
         arm = context.active_object.data
         bpy.ops.object.mode_set_with_submode(mode='EDIT')
-        mat = mathutils.Matrix().Translation(context.scene.cursor.location - context.active_object.location) #add armature location to 3d cursor
-        add_bone(arm, 'Bone', mat, self.lenght / context.scene.unit_settings.scale_length)
-        
+        #mat = mathutils.Matrix().Translation(context.scene.cursor.location - context.active_object.location) #add armature location to 3d cursor
+        # locmat = Matrix.Translation(context.scene.cursor.location)
+        # mat = context.active_object.matrix_world.inverted() * locmat
+        mat =  context.active_object.matrix_world.inverted() @ context.scene.cursor.matrix
+        mat = mathutils.Matrix().Translation(mat.translation)
+        add_bone(arm, self.name, mat, self.lenght / context.scene.unit_settings.scale_length, self.y_up)
+        bpy.ops.object.mode_set_with_submode(mode=mod)
+
         return {'FINISHED'}
 
 
@@ -847,6 +859,9 @@ class PG_OT_simple_controls(Operator):
         if context.active_object == None or context.active_object.type != 'ARMATURE' :
             return False
         return True
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
 
     def execute(self, context):
         avatar_rig = context.active_object
@@ -909,8 +924,8 @@ class PG_OT_add_space_switching(Operator):
     #ctrl_layer : IntProperty(name = "CTRL Bones Layer", description = "Layer To Place Control Bones", min = 0, max = 31)
     #set_wgt : BoolProperty(name = "Set Widgets", description = "Set Cube Widgets for Control Bones", default = False)
     
-    text : StringProperty(name="TEXT")
-    a : FloatProperty(name="a")
+    armature : StringProperty(name="Armature")
+    bone : StringProperty(name="Bone")
 
     @classmethod
     def poll(cls, context):
@@ -925,6 +940,7 @@ class PG_OT_add_space_switching(Operator):
         return True
  
     def invoke(self, context, event):
+        self.armature = context.active_object.name
         return context.window_manager.invoke_props_dialog(self)
 
     #TODO
@@ -971,12 +987,21 @@ class PG_OT_add_space_switching(Operator):
         return {"FINISHED"}
     
     def draw(self, context):
+        tgt = context.active_object
+        scene = context.scene
+
         layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = True
         #row = layout.row(align = True)
 
         layout.label(text= "Target: " + str(context.active_bone.name))
-        layout.prop(self, "text")
-        layout.prop(self, "a")
+        #layout.prop_search(self, "armature", scene, "mychosenobject", text="")
+
+        layout.prop_search(self, "bone", bpy.data.objects[self.armature].pose, "bones", text="")
+
+    
+
 
 
 class PG_OT_test(Operator):

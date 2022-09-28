@@ -50,10 +50,14 @@ def create_wgt_cube(context, size : float = 1):
     bpy.ops.mesh.delete(type='ONLY_FACE')
     bpy.ops.object.mode_set_with_submode(mode='OBJECT')
     
-def add_bone(armature : Armature, name : str, transform : Matrix, length : float):
+def add_bone(armature : Armature, name : str, transform : Matrix, length : float, y_up = False):
     bone = armature.edit_bones.new(name)
-    bone.tail = bone.head + Vector((0,1,0)) * length
     bone.matrix = transform.copy()
+    vec = Vector((0,1,0))
+    if y_up:
+        vec = Vector((0,0,1))
+    bone.tail = bone.head + vec * length
+    
     bone.select = bone.select_head = bone.select_tail = True
     return bone
 
