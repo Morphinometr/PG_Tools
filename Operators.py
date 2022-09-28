@@ -1,11 +1,7 @@
-from logging import NullHandler
-from multiprocessing import context
 import bpy, mathutils
 from bpy.types import Operator
 from bpy.props import EnumProperty, BoolProperty, IntProperty, FloatProperty, StringProperty
 from .Utils import *
-from .Menus import *
-
 
 #   Custom properties
 
@@ -810,7 +806,7 @@ class PG_OT_add_bone(Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     name : StringProperty(name="Name", default= "Bone")
-    lenght : FloatProperty(name = 'Lenght', default = 1, min = 0)
+    length : FloatProperty(name = 'Length', default = 1 , min = 0, unit= "LENGTH")
     y_up : BoolProperty(name= "Y up", default= False)
 
     @classmethod
@@ -822,18 +818,25 @@ class PG_OT_add_bone(Operator):
         return True
 
     def invoke(self, context, event):
+        self.length = 1 / context.scene.unit_settings.scale_length
         return context.window_manager.invoke_props_dialog(self)
 
     def execute(self, context):
         mod = context.object.mode
         arm = context.active_object.data
         bpy.ops.object.mode_set_with_submode(mode='EDIT')
-        #mat = mathutils.Matrix().Translation(context.scene.cursor.location - context.active_object.location) #add armature location to 3d cursor
-        # locmat = Matrix.Translation(context.scene.cursor.location)
-        # mat = context.active_object.matrix_world.inverted() * locmat
+
         mat =  context.active_object.matrix_world.inverted() @ context.scene.cursor.matrix
         mat = mathutils.Matrix().Translation(mat.translation)
-        add_bone(arm, self.name, mat, self.lenght / context.scene.unit_settings.scale_length, self.y_up)
+
+        if self.y_up:
+            mat = Matrix(((1, 0, 0, mat[0][3]), 
+                          (0, 0, -1, mat[1][3]),
+                          (0, 1, 0, mat[2][3]),
+                          (0, 0, 0, 1)))
+        
+        bpy.ops.armature.select_all(action='DESELECT')
+        add_bone(arm, self.name, mat, self.length)
         bpy.ops.object.mode_set_with_submode(mode=mod)
 
         return {'FINISHED'}
@@ -848,6 +851,7 @@ class PG_OT_simple_controls(Operator):
 
     ctrl_layer : IntProperty(name = "CTRL Bones Layer", description = "Layer To Place Control Bones", min = 0, max = 31)
     set_wgt : BoolProperty(name = "Set Widgets", description = "Set Cube Widgets for Control Bones", default = False)
+    wgt_size : FloatProperty(name= "Widget Size", default= 1, unit= "LENGTH")
     
     # TODO:
     # adaptive_wgt : BoolProperty(name = "Adaptive WGTs", description = "", default = True)
@@ -861,6 +865,7 @@ class PG_OT_simple_controls(Operator):
         return True
 
     def invoke(self, context, event):
+        self.wgt_size = 1 / context.scene.unit_settings.scale_length
         return context.window_manager.invoke_props_dialog(self)
 
     def execute(self, context):
@@ -871,7 +876,7 @@ class PG_OT_simple_controls(Operator):
         mod = context.object.mode
         
         if not obj_exists('WGT_Cube') and self.set_wgt:
-            create_wgt_cube(context, 1)
+            widget = create_wgt_cube(1 / context.scene.unit_settings.scale_length)
             bpy.ops.object.select_all(action='DESELECT')
             context.view_layer.objects.active = avatar_rig
             context.active_object.select_set(True)
@@ -902,14 +907,19 @@ class PG_OT_simple_controls(Operator):
         
         # Constraints and widgets             
         bpy.ops.object.mode_set_with_submode(mode='POSE')
+        wgt_sc = self.wgt_size * context.scene.unit_settings.scale_length
+        wgt_scale = (wgt_sc, wgt_sc, wgt_sc)
+
         for bone, ctrl in bone_pairs.items():
             avatar_rig.pose.bones[bone].constraints.new('COPY_TRANSFORMS')
             avatar_rig.pose.bones[bone].constraints.active.target = avatar_rig
             avatar_rig.pose.bones[bone].constraints.active.subtarget = ctrl
 
             if self.set_wgt:
-                avatar_rig.pose.bones[ctrl].custom_shape = bpy.data.objects['WGT_Cube']
+                avatar_rig.pose.bones[ctrl].custom_shape = widget
                 avatar_rig.pose.bones[ctrl].use_custom_shape_bone_size = False
+                avatar_rig.pose.bones[ctrl].custom_shape_scale_xyz = wgt_scale
+
 
         bpy.ops.object.mode_set_with_submode(mode=mod)
         
@@ -921,11 +931,10 @@ class PG_OT_add_space_switching(Operator):
     bl_idname = "pg.add_space_switching"
     bl_options = {'REGISTER', 'UNDO'}
 
-    #ctrl_layer : IntProperty(name = "CTRL Bones Layer", description = "Layer To Place Control Bones", min = 0, max = 31)
-    #set_wgt : BoolProperty(name = "Set Widgets", description = "Set Cube Widgets for Control Bones", default = False)
-    
     armature : StringProperty(name="Armature")
-    bone : StringProperty(name="Bone")
+    target : StringProperty(name="Target")
+    bone1 : StringProperty(name="Bone1")
+    bone2 : StringProperty(name="Bone2")
 
     @classmethod
     def poll(cls, context):
@@ -941,21 +950,22 @@ class PG_OT_add_space_switching(Operator):
  
     def invoke(self, context, event):
         self.armature = context.active_object.name
+        self.target = context.active_bone.name
         return context.window_manager.invoke_props_dialog(self)
 
     #TODO
     def execute(self, context):
-        spaces = "World", "Arm_R", "Arm_L"
-        active_bone_name = bpy.context.active_bone.name
-        armature = bpy.context.active_object
-        bone = armature.pose.bones[active_bone_name]
+        own_armature = context.active_object
+        active_bone_name = self.target
+        spaces = "World", self.bone1, self.bone2
+        bone = own_armature.pose.bones[active_bone_name]
 
         prop_name = active_bone_name + "_parent"
         bone[prop_name] = 0
 
         #bpy.ops.wm.properties_edit(data_path="active_pose_bone", property_name=prop_name, property_type='INT', is_overridable_library=True, description="", min_int=0, max_int=2147483647, step_int=1)
 
-        switcher = armature.data.space_switcher.space_switches.add()
+        switcher = own_armature.data.space_switcher.space_switches.add()
         switcher.name = prop_name
         datapath = 'pose.bones["%s"]["%s"]' % (active_bone_name, prop_name)
         switcher.property_datapath = datapath
@@ -971,7 +981,7 @@ class PG_OT_add_space_switching(Operator):
 
         for num in range(len(con_spaces)):
             constrain.targets.new()
-            constrain.targets[num].target = armature
+            constrain.targets[num].target = bpy.data.objects[self.armature]
             constrain.targets[num].subtarget = con_spaces[num]
             
             drv = constrain.targets[num].driver_add("weight")
@@ -979,7 +989,7 @@ class PG_OT_add_space_switching(Operator):
             var = drv.driver.variables.new()
             var.name = "parent"
             var.targets[0].id_type = "OBJECT"
-            var.targets[0].id = armature
+            var.targets[0].id = bpy.data.objects[self.armature]
             var.targets[0].data_path = datapath
             drv.driver.expression = "parent == %d" % (num + 1) 
     
@@ -987,7 +997,6 @@ class PG_OT_add_space_switching(Operator):
         return {"FINISHED"}
     
     def draw(self, context):
-        tgt = context.active_object
         scene = context.scene
 
         layout = self.layout
@@ -995,10 +1004,9 @@ class PG_OT_add_space_switching(Operator):
         layout.use_property_decorate = True
         #row = layout.row(align = True)
 
-        layout.label(text= "Target: " + str(context.active_bone.name))
-        #layout.prop_search(self, "armature", scene, "mychosenobject", text="")
-
-        layout.prop_search(self, "bone", bpy.data.objects[self.armature].pose, "bones", text="")
+        layout.label(text= "Target: " + self.target)
+        layout.prop_search(self, "bone1", bpy.data.objects[self.armature].pose, "bones", text="")
+        layout.prop_search(self, "bone2", bpy.data.objects[self.armature].pose, "bones", text="")
 
     
 

@@ -46,7 +46,7 @@ bl_info = {
     "category": "3D View"
     }
 
-from . import Operators, Panels, Menus
+from . import Operators, Panels
 
 class PGToolsPreferences(AddonPreferences):
     bl_idname = __package__
@@ -95,7 +95,6 @@ class OBJECT_OT_pg_tools_prefs(Operator):
 modules = (
     Operators,
     Panels,
-    Menus,
 
 )
 
