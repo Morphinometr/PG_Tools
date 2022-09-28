@@ -1,11 +1,12 @@
-import bpy, random
+import bpy
+import random
 from mathutils import Matrix, Vector
-from bpy.types import Object, Armature
+from bpy.types import Armature
 
 def get_addon_name(context):
     modules = context.preferences.addons.keys()
     for mod in modules:
-        if 'Pixel_Tools' in mod:
+        if 'PG_Tools' in mod:
             print(mod)
             return mod
 
@@ -65,9 +66,9 @@ def move_bones_to_layer(bones, layer : int):
             bone.layers[l] = False
                  
 def set_td_size(scene, x, y):
-        if addon_installed('Texel_Density'):
-            scene.td.custom_width = str(x)
-            scene.td.custom_height = str(y)
+    if addon_installed('Texel_Density'):
+        scene.td.custom_width = str(x)
+        scene.td.custom_height = str(y)
 
 
     
@@ -128,11 +129,10 @@ def texture_pixel_filter(context):
 
     for mat in materials:
         mat.node_tree.nodes["Principled BSDF"].inputs[6].default_value = 0 # 6 - Metallic 
-    
+
     for tex in textures:
         tex.interpolation = 'Closest'
 
-    return {'FINISHED'}
 
 def flatten_materials(context):
     materials = get_materials(context)
@@ -151,7 +151,7 @@ def color_list(length, steps=10, alpha=1):
     success = False
     # seed = random.randrange(1000000)
     for i in range(length):
-        for c in range(1000):    
+        for c in range(1000):
             col = random_color(steps, alpha)
             if col not in lst and col != (1,1,1, alpha):
                 success = True

@@ -35,7 +35,7 @@ from bpy.types import (
 )
 
 bl_info = {
-    "name": "Pixel Tools",
+    "name": "PG Tools",
     "author": "Kharkovschenko Konstantin",
     "version": (0, 1, 0),
     "blender": (2, 80, 0),
@@ -48,7 +48,7 @@ bl_info = {
 
 from . import Operators, Panels, Menus
 
-class PixelToolsPreferences(AddonPreferences):
+class PGToolsPreferences(AddonPreferences):
     bl_idname = __package__
 
     project_filepath : StringProperty(
@@ -73,9 +73,9 @@ class PixelToolsPreferences(AddonPreferences):
         # layout.prop(self, "boolean")
 
 
-class OBJECT_OT_pixel_tools_prefs(Operator):
+class OBJECT_OT_pg_tools_prefs(Operator):
     """Display preferences"""
-    bl_idname = "pixel.pixel_tools_prefs"
+    bl_idname = "pg.pg_tools_prefs"
     bl_label = "Add-on Preferences"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -100,8 +100,8 @@ modules = (
 )
 
 classes = (
-    OBJECT_OT_pixel_tools_prefs,
-    PixelToolsPreferences,
+    OBJECT_OT_pg_tools_prefs,
+    PGToolsPreferences,
 
 )
     

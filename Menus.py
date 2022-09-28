@@ -1,5 +1,4 @@
 import bpy
-#from .Operators import PIXEL_OT_simple_controls as scontrols
 
 
 class ControlBonesMenu(bpy.types.Menu):
@@ -25,17 +24,19 @@ class ControlBonesMenu(bpy.types.Menu):
 
 
 
+classes = (
+    ControlBonesMenu,
 
-
-
+)
 
 
 def register():
-    bpy.utils.register_class(ControlBonesMenu)
-
+    for cls in classes:
+        bpy.utils.register_class(cls)
 
 def unregister():
-    bpy.utils.unregister_class(ControlBonesMenu)
+    for cls in classes:
+        bpy.utils.unregister_class(cls)
 
 if __name__ == "__main__":
     register()

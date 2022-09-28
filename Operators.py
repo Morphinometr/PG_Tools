@@ -8,7 +8,7 @@ from .Menus import *
 
 #   Custom properties
 
-class PIXEL_properties(bpy.types.PropertyGroup):
+class PG_properties(bpy.types.PropertyGroup):
     
     tex_size : EnumProperty(
         name = 'Texture Dimentions', 
@@ -51,22 +51,22 @@ class PIXEL_properties(bpy.types.PropertyGroup):
 #   Operators    
 #   Modeling
 
-class PIXEL_OT_find_instances(Operator):
+class PG_OT_find_instances(Operator):
     """Detects objects that shares data mesh and assignes random object color"""
     bl_label = "Find Instances"
-    bl_idname = "pixel.find_instances"
+    bl_idname = "pg.find_instances"
     bl_options = {'REGISTER', 'UNDO'}
 
     reset_colors : BoolProperty(name="Reset Colors", default = False)
 
     def invoke(self, context, event):
-        self.reset_colors = context.scene.pixel_tool.reset_colors
+        self.reset_colors = context.scene.pg_tool.reset_colors
                             
         return self.execute(context)
 
     def execute(self, context):
         meshes = []
-        context.scene.pixel_tool.reset_colors = self.reset_colors
+        context.scene.pg_tool.reset_colors = self.reset_colors
         
         #instantiated_meshes = [mesh if mesh.users > 1 else pass for mesh in bpy.data.meshes]
         #[print(i) for i in x if i>3 ]
@@ -78,7 +78,7 @@ class PIXEL_OT_find_instances(Operator):
         col_steps = ((len(meshes) + 1) ** (1/3) ) // 1 
         
         if self.reset_colors:
-            bpy.ops.pixel.reset_ob_colors()
+            bpy.ops.pg.reset_ob_colors()
 
         try:
             col_lst = color_list(len(meshes), col_steps)
@@ -98,10 +98,10 @@ class PIXEL_OT_find_instances(Operator):
 
         return {'FINISHED'}
 
-class PIXEL_OT_reset_ob_colors(Operator):
+class PG_OT_reset_ob_colors(Operator):
     """Resets all object colors in the scene"""
     bl_label = "Reset Object Colors"
-    bl_idname = "pixel.reset_ob_colors"
+    bl_idname = "pg.reset_ob_colors"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -111,10 +111,10 @@ class PIXEL_OT_reset_ob_colors(Operator):
         return {'FINISHED'}
 
 
-class PIXEL_OT_optimize(Operator):
+class PG_OT_optimize(Operator):
     """Limited dissolve, weld and set sharp selected objects"""
     bl_label = "Optimize"
-    bl_idname = "pixel.optimize"
+    bl_idname = "pg.optimize"
     bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
@@ -142,10 +142,10 @@ class PIXEL_OT_optimize(Operator):
        
         return {'FINISHED'}
 
-class PIXEL_OT_unwrap(Operator):
+class PG_OT_unwrap(Operator):
     """Unwrap mesh"""
     bl_label = "Unwrap"
-    bl_idname = "pixel.unwrap"
+    bl_idname = "pg.unwrap"
     bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
@@ -177,10 +177,10 @@ class PIXEL_OT_unwrap(Operator):
     
         return {'FINISHED'}
 
-class PIXEL_OT_test_material(Operator):
+class PG_OT_test_material(Operator):
     """Add test meterial"""
     bl_label = "Test Material"
-    bl_idname = "pixel.test_material"
+    bl_idname = "pg.test_material"
     bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
@@ -207,10 +207,10 @@ class PIXEL_OT_test_material(Operator):
                    
         return {'FINISHED'}
     
-class PIXEL_OT_test_texture(Operator):
+class PG_OT_test_texture(Operator):
     """Add test texture"""
     bl_label = "Set Texture"
-    bl_idname = "pixel.test_texture"
+    bl_idname = "pg.test_texture"
     bl_options = {'REGISTER', 'UNDO'}
     
     size : EnumProperty(
@@ -245,20 +245,20 @@ class PIXEL_OT_test_texture(Operator):
     
     def invoke(self, context, event):
         scene = context.scene
-        pixel_tool = scene.pixel_tool
-        self.size = pixel_tool.tex_size
-        self.tex_size_x = pixel_tool.tex_size_custom_x
-        self.tex_size_y = pixel_tool.tex_size_custom_y
+        pg_tool = scene.pg_tool
+        self.size = pg_tool.tex_size
+        self.tex_size_x = pg_tool.tex_size_custom_x
+        self.tex_size_y = pg_tool.tex_size_custom_y
                     
         return self.execute(context)
         
     def execute(self, context):
         scene = context.scene
-        pixel_tool = scene.pixel_tool
+        pg_tool = scene.pg_tool
          #Custom tex size!
         if self.size != 'custom':
             self.tex_size_x = self.tex_size_y = int(self.size)
-            pixel_tool.tex_size_custom_x = pixel_tool.tex_size_custom_y = int(self.size)
+            pg_tool.tex_size_custom_x = pg_tool.tex_size_custom_y = int(self.size)
         
         #test texture add
         tex_name = "Test " + str(self.tex_size_x) + 'x' + str(self.tex_size_y)
@@ -277,14 +277,14 @@ class PIXEL_OT_test_texture(Operator):
         bake_image_node = test_mat.node_tree.nodes["Bake"] #FIXME
         bake_image_node.image = texture
         
-        set_td_size(scene, scene.pixel_tool.tex_size_custom_x, scene.pixel_tool.tex_size_custom_y)
+        set_td_size(scene, scene.pg_tool.tex_size_custom_x, scene.pg_tool.tex_size_custom_y)
         
         return {'FINISHED'}
 
-class PIXEL_OT_texture_pixel_filter(Operator):
+class PG_OT_texture_pixel_filter(Operator):
     """Set pixel interpolation mode to "Closest" for all textures of selected objects"""
     bl_label = "Make pixelated"
-    bl_idname = "pixel.texture_pixel_filter"
+    bl_idname = "pg.texture_pixel_filter"
     bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
@@ -298,10 +298,10 @@ class PIXEL_OT_texture_pixel_filter(Operator):
         
         return {'FINISHED'}
  
-class PIXEL_OT_reload_textures(Operator):
+class PG_OT_reload_textures(Operator):
     """Reload textures"""
     bl_label = "Reload Textures"
-    bl_idname = "pixel.reload_textures"
+    bl_idname = "pg.reload_textures"
     bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
@@ -327,10 +327,10 @@ class PIXEL_OT_reload_textures(Operator):
     
 #   Interaraction with texel density addon
 
-class PIXEL_OT_set_tex_desity(Operator):
+class PG_OT_set_tex_desity(Operator):
     """Set texel density for selected faces"""
     bl_label = "Set Texel Density"
-    bl_idname = "pixel.set_tex_desity"
+    bl_idname = "pg.set_tex_desity"
     bl_options = {'REGISTER', 'UNDO'}
     
     size : EnumProperty(
@@ -375,19 +375,19 @@ class PIXEL_OT_set_tex_desity(Operator):
     
     def invoke(self, context, event):
         scene = context.scene
-        pixel_tool = scene.pixel_tool
-        self.size = pixel_tool.tex_size
-        self.tex_size_x = pixel_tool.tex_size_custom_x
-        self.tex_size_y = pixel_tool.tex_size_custom_y
+        pg_tool = scene.pg_tool
+        self.size = pg_tool.tex_size
+        self.tex_size_x = pg_tool.tex_size_custom_x
+        self.tex_size_y = pg_tool.tex_size_custom_y
 
-        self.density = context.scene.pixel_tool.px_density
-        self.density_custom = context.scene.pixel_tool.px_density_custom
+        self.density = context.scene.pg_tool.px_density
+        self.density_custom = context.scene.pg_tool.px_density_custom
                     
         return self.execute(context)
         
     def execute(self, context):
         scene = context.scene
-        pixel_tool = scene.pixel_tool
+        pg_tool = scene.pg_tool
         scene.td.units = '1'
         scene.td.texture_size = '4'
         scene.td.set_method = '0'
@@ -395,14 +395,14 @@ class PIXEL_OT_set_tex_desity(Operator):
          #Custom tex size!
         if self.size != 'custom':
             self.tex_size_x = self.tex_size_y = int(self.size)
-            pixel_tool.tex_size_custom_x = pixel_tool.tex_size_custom_y = int(self.size)
+            pg_tool.tex_size_custom_x = pg_tool.tex_size_custom_y = int(self.size)
 
-        set_td_size(scene, scene.pixel_tool.tex_size_custom_x, scene.pixel_tool.tex_size_custom_y)
+        set_td_size(scene, scene.pg_tool.tex_size_custom_x, scene.pg_tool.tex_size_custom_y)
 
-        if scene.pixel_tool.px_density == 'custom':
-            scene.td.density_set = str(scene.pixel_tool.px_density_custom)
+        if scene.pg_tool.px_density == 'custom':
+            scene.td.density_set = str(scene.pg_tool.px_density_custom)
         else:
-            scene.td.density_set = scene.pixel_tool.px_density
+            scene.td.density_set = scene.pg_tool.px_density
         
         bpy.ops.object.texel_density_set()
 
@@ -412,10 +412,10 @@ class PIXEL_OT_set_tex_desity(Operator):
 #   Layout
 
 #   Import
-class PIXEL_OT_import_weapon(Operator):
+class PG_OT_import_weapon(Operator):
     """Import Weapon by its Tag"""
     bl_label = "Import Weapon"
-    bl_idname = "pixel.import_weapon"
+    bl_idname = "pg.import_weapon"
     bl_options = {'REGISTER', 'UNDO'}
 
     weapon_tag : StringProperty(name = "Weapon tag" )
@@ -427,7 +427,7 @@ class PIXEL_OT_import_weapon(Operator):
         return context.area.type == 'VIEW_3D'
 
     def invoke(self, context, event):
-        self.weapon_tag = context.scene.pixel_tool.weapon_tag
+        self.weapon_tag = context.scene.pg_tool.weapon_tag
                     
         return self.execute(context)
 
@@ -468,14 +468,14 @@ class PIXEL_OT_import_weapon(Operator):
         if self.fix_materials:
             flatten_materials(context)
 
-        context.scene.pixel_tool.weapon_tag = self.weapon_tag
+        context.scene.pg_tool.weapon_tag = self.weapon_tag
 
         return {'FINISHED'}
 
-class PIXEL_OT_import_avatar(Operator):
+class PG_OT_import_avatar(Operator):
     """Import Avatar by its Tag"""
     bl_label = "Import Avatar"
-    bl_idname = "pixel.import_avatar"
+    bl_idname = "pg.import_avatar"
     bl_options = {'REGISTER', 'UNDO'}
 
     avatar_tag : StringProperty(name = "Avatar Name" )
@@ -530,15 +530,15 @@ class PIXEL_OT_import_avatar(Operator):
         if self.fix_materials:
             flatten_materials(context)
 
-        context.scene.pixel_tool.avatar_tag = self.avatar_tag
+        context.scene.pg_tool.avatar_tag = self.avatar_tag
 
         return {'FINISHED'}
         
 #Solve some bugs of Better FBX importer
-class PIXEL_OT_fix_import(Operator):
+class PG_OT_fix_import(Operator):
     """Fix imported Weapon Rig in active Collection"""
     bl_label = "Fix Imported Rig"
-    bl_idname = "pixel.fix_import"
+    bl_idname = "pg.fix_import"
     bl_options = {'REGISTER', 'UNDO'}
     
 #    @classmethod
@@ -586,10 +586,10 @@ class PIXEL_OT_fix_import(Operator):
             self.report({'ERROR'}, 'Armature has no parent')
             return {'CANCELLED'} 
         
-        if scene.pixel_tool.weapon_tag == '':
-            scene.pixel_tool.weapon_tag = armature.name
+        if scene.pg_tool.weapon_tag == '':
+            scene.pg_tool.weapon_tag = armature.name
         
-        tag = scene.pixel_tool.weapon_tag
+        tag = scene.pg_tool.weapon_tag
         
         
         #create trash collection
@@ -649,10 +649,10 @@ class PIXEL_OT_fix_import(Operator):
         return {'FINISHED'}
     
 #   Combine rigs for presentation 
-class PIXEL_OT_combine_rigs(Operator):
+class PG_OT_combine_rigs(Operator):
     """Combine weapon rig (selected) with main avatar rig (active)"""
     bl_label = "Combine Rigs"
-    bl_idname = "pixel.combine_rigs"
+    bl_idname = "pg.combine_rigs"
     bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
@@ -764,12 +764,12 @@ class PIXEL_OT_combine_rigs(Operator):
                 if bone.get("bone_id") == "weapon_inner":
                     inner = bone
         
-        weapon_tag = str(context.scene.pixel_tool.weapon_tag)
+        weapon_tag = str(context.scene.pg_tool.weapon_tag)
         avatar_rig.data.edit_bones[weapon_tag].parent = inner
         bpy.ops.object.mode_set_with_submode(mode='OBJECT')
         
         #rename bones
-        num = str(context.scene.pixel_tool.weapon_number)
+        num = str(context.scene.pg_tool.weapon_number)
         if num != '':
             #weap_prefab.name = weap_prefab.name[0:-4] + num
             print(weapon.name)
@@ -777,7 +777,7 @@ class PIXEL_OT_combine_rigs(Operator):
             print(weapon.name)
             inner.name = str(inner.name)[0:6] + num + str(inner.name)[10:]
             
-        avatar_name = str(context.scene.pixel_tool.avatar_tag)
+        avatar_name = str(context.scene.pg_tool.avatar_tag)
         if avatar_name != '':
             try: 
                 avatar.name = avatar_name
@@ -802,10 +802,10 @@ class PIXEL_OT_combine_rigs(Operator):
 #   Riging
 
 #   Create bone with proper scene scaling
-class PIXEL_OT_add_bone(Operator):
+class PG_OT_add_bone(Operator):
     """Create bone with proper scene scaling"""
     bl_label = "Add Bone"
-    bl_idname = "pixel.add_bone"
+    bl_idname = "pg.add_bone"
     bl_options = {'REGISTER', 'UNDO'}
 
     lenght : FloatProperty(name = 'Lenght', default = 1, min = 0)
@@ -828,10 +828,10 @@ class PIXEL_OT_add_bone(Operator):
 
 
 #   Create simple controls
-class PIXEL_OT_simple_controls(Operator):
+class PG_OT_simple_controls(Operator):
     """Create control bones"""
     bl_label = "Create simple controls"
-    bl_idname = "pixel.create_simple_controls"
+    bl_idname = "pg.create_simple_controls"
     bl_options = {'REGISTER', 'UNDO'}
 
     ctrl_layer : IntProperty(name = "CTRL Bones Layer", description = "Layer To Place Control Bones", min = 0, max = 31)
@@ -900,12 +900,46 @@ class PIXEL_OT_simple_controls(Operator):
         
         return {'FINISHED'}
 
+class PG_OT_add_space_switching(Operator):
+    """Set Space Switching"""
+    bl_label = "Add Space Switching"
+    bl_idname = "wm.add_space_switching"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    #ctrl_layer : IntProperty(name = "CTRL Bones Layer", description = "Layer To Place Control Bones", min = 0, max = 31)
+    #set_wgt : BoolProperty(name = "Set Widgets", description = "Set Cube Widgets for Control Bones", default = False)
+    
+    text = StringProperty(name="text")
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def execute(self, context):
+        
+        
+        return {"FINISHED"}
+    
+
+    @classmethod
+    def poll(cls, context):
+        if context.active_object == None or context.active_object.type != 'ARMATURE' :
+            return False
+        if context.mode != "POSE":
+            return False
+        if context.active_bone is None:
+            return False
+        if not addon_installed("space_switcher"):
+            return False
+        return True
+
+    
 
 
-class PIXEL_OT_test(Operator):
+
+class PG_OT_test(Operator):
     """test operator"""
     bl_label = "DEV: test"
-    bl_idname = "pixel.test"
+    bl_idname = "pg.test"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -923,34 +957,35 @@ class PIXEL_OT_test(Operator):
 #   Registration
 
 classes = (
-    PIXEL_properties,
-    PIXEL_OT_find_instances,
-    PIXEL_OT_reset_ob_colors,
-    PIXEL_OT_optimize,
-    PIXEL_OT_unwrap,
-    PIXEL_OT_test_material,
-    PIXEL_OT_test_texture,
-    PIXEL_OT_texture_pixel_filter,
-    PIXEL_OT_set_tex_desity,
-    PIXEL_OT_reload_textures,
-    PIXEL_OT_import_avatar,
-    PIXEL_OT_import_weapon,
-    PIXEL_OT_fix_import,
-    PIXEL_OT_combine_rigs,
-    PIXEL_OT_add_bone,
-    PIXEL_OT_simple_controls,
+    PG_properties,
+    PG_OT_find_instances,
+    PG_OT_reset_ob_colors,
+    PG_OT_optimize,
+    PG_OT_unwrap,
+    PG_OT_test_material,
+    PG_OT_test_texture,
+    PG_OT_texture_pixel_filter,
+    PG_OT_set_tex_desity,
+    PG_OT_reload_textures,
+    PG_OT_import_avatar,
+    PG_OT_import_weapon,
+    PG_OT_fix_import,
+    PG_OT_combine_rigs,
+    PG_OT_add_bone,
+    PG_OT_simple_controls,
+    PG_OT_add_space_switching,
 
-    PIXEL_OT_test,
+    PG_OT_test,
         
     )        
                 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-    bpy.types.Scene.pixel_tool = bpy.props.PointerProperty(type = PIXEL_properties)
+    bpy.types.Scene.pg_tool = bpy.props.PointerProperty(type = PG_properties)
 
 def unregister():
-    del bpy.types.Scene.pixel_tool
+    del bpy.types.Scene.pg_tool
     for cls in classes:
         bpy.utils.unregister_class(cls)
         
