@@ -1,5 +1,3 @@
-from enum import Enum
-from re import I
 import bpy, mathutils
 from bpy.types import Operator, PropertyGroup
 from bpy.props import EnumProperty, BoolProperty, IntProperty, FloatProperty, StringProperty, BoolVectorProperty
@@ -946,17 +944,10 @@ class PG_Bone_Spaces(PropertyGroup):
     {"armature" : "Armature", "bone": "Bone"}
 
 class PG_OT_add_space(Operator):
-    """"""
+    """Add parent space"""
     bl_label = "Add space"
     bl_idname = "pg.add_space"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    # enum_items = (
-    #     ("add", "Item 1", "Description 1"),
-    #     ("remove", "Item 2", "Description 2"),
-        
-    # )
-    # action: bpy.props.EnumProperty(items=enum_items)
+    #bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         
@@ -969,33 +960,23 @@ class PG_OT_add_space(Operator):
         space.bone = ""
        
 class PG_OT_remove_space(Operator):
-    """"""
-    bl_label = "SAdd space"
+    """Remove parent space"""
+    bl_label = "Remove space"
     bl_idname = "pg.remove_space"
-    bl_options = {'REGISTER', 'UNDO'}
+    #bl_options = {'REGISTER', 'UNDO'}
 
     index : IntProperty(name="index")
 
     def execute(self, context):
-        self.remove_space(context, self.index)
+        context.active_pose_bone.spaces.remove(self.index)
         return {"FINISHED"}
-
-    def remove_space(self, context, index):
-        context.active_pose_bone.spaces.remove(index)
-
-
-
+ 
 class PG_OT_add_space_switching(Operator):
-    """Set Space Switching"""
+    """Configure Active Bone space switching"""
     bl_label = "Add Space Switching"
     bl_idname = "pg.add_space_switching"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    armature : StringProperty(name="Armature")
-    target : StringProperty(name="Target")
-    bone1 : StringProperty(name="Bone1")
-    bone2 : StringProperty(name="Bone2")
-
+    bl_options = {'UNDO'} #'REGISTER'
+   
     @classmethod
     def poll(cls, context):
         if context.active_object == None or context.active_object.type != 'ARMATURE' :
@@ -1012,75 +993,116 @@ class PG_OT_add_space_switching(Operator):
         if not context.active_pose_bone.spaces:
             bpy.ops.pg.add_space()
             bpy.ops.pg.add_space()
-            #self.add_space(context)
-        self.armature = context.active_object.name
-        self.target = context.active_bone.name
+
         return context.window_manager.invoke_props_dialog(self)
 
     def draw(self, context):
-        scene = context.scene
         spaces = context.active_pose_bone.spaces
         layout = self.layout
-        #layout.use_property_split = True
-        #layout.use_property_decorate = True
-        #row = layout.row(align = True)
-
-        layout.label(text= "Target: " + self.target)
-        #layout.prop_search(self, "bone1", bpy.data.objects[self.armature].pose, "bones", text="")
-        #layout.prop_search(self, "bone2", bpy.data.objects[self.armature].pose, "bones", text="")
-        #[(ob.name, ob.name, ob.type) for ob in bpy.context.scene.objects]
+        
+        layout.label(text= "Bone: " + context.active_pose_bone.name)
         for i in range(len(spaces.keys())):
             row = layout.row(align = True)
             row.prop_search(spaces[i], "armature", bpy.data, "objects", text="")
-            row.prop_search(spaces[i], "bone", bpy.data.objects[self.armature].pose, "bones", text="")
+            row.prop_search(spaces[i], "bone", context.active_object.pose, "bones", text="") #bpy.data.objects[self.armature]
             row.operator("pg.remove_space", text= "", icon= "X").index = i
-        layout.operator("pg.add_space", text= "Add Space")#.action = "add"
-
+        layout.operator("pg.add_space", text= "Add Space")
 
     def execute(self, context):
         own_armature = context.active_object
-        active_bone_name = self.target
-        #spaces = "World", self.bone1, self.bone2
-        spaces = "World", context.active_pose_bone.spaces[0].bone, context.active_pose_bone.spaces[1].bone   #!!!!!
-        bone = own_armature.pose.bones[active_bone_name]
+        active_bone = context.active_pose_bone
+        prop_name = active_bone.name + "_space"
 
-        prop_name = active_bone_name + "_parent"
-        bone[prop_name] = 0
+        if len(context.active_pose_bone.spaces) == 0:
+            del active_bone["spaces"]
+            if active_bone.get(prop_name) is not None:
+                del active_bone[prop_name]
+            
+            switches = own_armature.data.space_switcher.space_switches
+            if switches.get(prop_name):
+                index = switches[prop_name].index
+                switches.remove(index)
+            
+            constrain = active_bone.constraints.get(prop_name)
+            if constrain:
+                self.clear_constrain(constrain)
+                active_bone.constraints.remove(constrain)
+            return {"FINISHED"}
+        
+        
+        
+        con_spaces = []
+        con_armatures = []
 
-        #bpy.ops.wm.properties_edit(data_path="active_pose_bone", property_name=prop_name, property_type='INT', is_overridable_library=True, description="", min_int=0, max_int=2147483647, step_int=1)
+        for space in context.active_pose_bone.spaces:
+            con_armatures.append(space.armature)
+            con_spaces.append(space.bone)
 
-        switcher = own_armature.data.space_switcher.space_switches.add()
-        switcher.name = prop_name
-        datapath = 'pose.bones["%s"]["%s"]' % (active_bone_name, prop_name)
+        sw_spaces = ["World"]
+        for i in range(len(con_armatures)):
+            if con_armatures[i] != own_armature.name:
+                sw_spaces.append(con_armatures[i] + ": " + con_spaces[i])
+            else:
+                sw_spaces.append(con_spaces[i])
+        
+        if active_bone.get(prop_name) is None:
+            active_bone[prop_name] = 0
+            active_bone.id_properties_ensure()
+        
+        property_manager = active_bone.id_properties_ui(prop_name)
+        property_manager.update(min=0, max=len(con_spaces), soft_max=len(con_spaces))
+        active_bone.property_overridable_library_set('["' + prop_name + '"]', True)
+        
+        switcher = own_armature.data.space_switcher.space_switches.get(prop_name)
+        if not switcher:
+            switcher = own_armature.data.space_switcher.space_switches.add()
+            switcher.name = prop_name
+        
+        datapath = 'pose.bones["%s"]["%s"]' % (active_bone.name, prop_name)
         switcher.property_datapath = datapath
         switcher.space_switch_type = "ENUM"
+
+        switcher.enum_type_properties.bones.clear()
+        switcher.enum_type_properties.spaces.clear()
+        
         switcher.enum_type_properties.bones.add()
-        switcher.enum_type_properties.bones[0].name = active_bone_name
-        for space in spaces:
+        switcher.enum_type_properties.bones[0].name = active_bone.name
+        for space in sw_spaces:
             sp = switcher.enum_type_properties.spaces.add()
             sp.name = space
 
-        constrain = bone.constraints.new(type = "ARMATURE")
-        con_spaces = spaces[1:]
+        constrain = context.active_pose_bone.constraints.get(prop_name)
+        if not constrain:
+            constrain = active_bone.constraints.new(type = "ARMATURE")
+            constrain.name = prop_name
+        
+        self.clear_constrain(constrain)
 
+        # for target in constrain.targets:
+        #     target.driver_remove("weight")
+        # constrain.targets.clear()
+        
         for num in range(len(con_spaces)):
             constrain.targets.new()
-            constrain.targets[num].target = bpy.data.objects[self.armature]
+            constrain.targets[num].target = bpy.data.objects[con_armatures[num]]
             constrain.targets[num].subtarget = con_spaces[num]
             
             drv = constrain.targets[num].driver_add("weight")
             drv.driver.type = "SCRIPTED"
             var = drv.driver.variables.new()
-            var.name = "parent"
+            var.name = "parent_space"
             var.targets[0].id_type = "OBJECT"
-            var.targets[0].id = bpy.data.objects[self.armature]
+            var.targets[0].id = context.active_object
             var.targets[0].data_path = datapath
-            drv.driver.expression = "parent == %d" % (num + 1) 
+            drv.driver.expression = "parent_space == %d" % (num + 1) 
     
         
         return {"FINISHED"}
     
-    
+    def clear_constrain(self, constrain):
+        for target in constrain.targets:
+            target.driver_remove("weight")
+        constrain.targets.clear()
     
     
 

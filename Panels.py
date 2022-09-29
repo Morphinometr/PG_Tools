@@ -108,7 +108,10 @@ class VIEW3D_PT_pg_riging(Panel):
 
         col.operator("pg.add_bone")
         col.operator("pg.create_simple_controls")
-        col.operator("pg.add_space_switching")
+        if context.active_pose_bone.get(context.active_pose_bone.name + "_space") is None:
+            col.operator("pg.add_space_switching")
+        else:
+            col.operator("pg.add_space_switching", text="Edit Space Switching")
         
 
 #   Dev
@@ -135,7 +138,7 @@ classes = (
     VIEW3D_PT_pg_modeling,
     VIEW3D_PT_pg_layout,
     VIEW3D_PT_pg_riging,
-    VIEW3D_PT_dev_panel,
+    #VIEW3D_PT_dev_panel,
 
 )
 
