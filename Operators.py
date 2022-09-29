@@ -1,5 +1,7 @@
+from enum import Enum
+from re import I
 import bpy, mathutils
-from bpy.types import Operator
+from bpy.types import Operator, PropertyGroup
 from bpy.props import EnumProperty, BoolProperty, IntProperty, FloatProperty, StringProperty, BoolVectorProperty
 from .Utils import *
 
@@ -937,6 +939,52 @@ class PG_OT_simple_controls(Operator):
         
         return {'FINISHED'}
 
+class PG_Bone_Spaces(PropertyGroup):
+    armature : StringProperty(name= "Armature")
+    bone : StringProperty(name= "Bone")
+
+    {"armature" : "Armature", "bone": "Bone"}
+
+class PG_OT_add_space(Operator):
+    """"""
+    bl_label = "Add space"
+    bl_idname = "pg.add_space"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    # enum_items = (
+    #     ("add", "Item 1", "Description 1"),
+    #     ("remove", "Item 2", "Description 2"),
+        
+    # )
+    # action: bpy.props.EnumProperty(items=enum_items)
+
+    def execute(self, context):
+        
+        self.add_space(context)
+        return {"FINISHED"}
+
+    def add_space(self, context):
+        space = context.active_pose_bone.spaces.add()
+        space.armature = context.active_object.name
+        space.bone = ""
+       
+class PG_OT_remove_space(Operator):
+    """"""
+    bl_label = "SAdd space"
+    bl_idname = "pg.remove_space"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    index : IntProperty(name="index")
+
+    def execute(self, context):
+        self.remove_space(context, self.index)
+        return {"FINISHED"}
+
+    def remove_space(self, context, index):
+        context.active_pose_bone.spaces.remove(index)
+
+
+
 class PG_OT_add_space_switching(Operator):
     """Set Space Switching"""
     bl_label = "Add Space Switching"
@@ -961,26 +1009,39 @@ class PG_OT_add_space_switching(Operator):
         return True
  
     def invoke(self, context, event):
+        if not context.active_pose_bone.spaces:
+            bpy.ops.pg.add_space()
+            bpy.ops.pg.add_space()
+            #self.add_space(context)
         self.armature = context.active_object.name
         self.target = context.active_bone.name
         return context.window_manager.invoke_props_dialog(self)
 
     def draw(self, context):
         scene = context.scene
-
+        spaces = context.active_pose_bone.spaces
         layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = True
+        #layout.use_property_split = True
+        #layout.use_property_decorate = True
         #row = layout.row(align = True)
 
         layout.label(text= "Target: " + self.target)
-        layout.prop_search(self, "bone1", bpy.data.objects[self.armature].pose, "bones", text="")
-        layout.prop_search(self, "bone2", bpy.data.objects[self.armature].pose, "bones", text="")
+        #layout.prop_search(self, "bone1", bpy.data.objects[self.armature].pose, "bones", text="")
+        #layout.prop_search(self, "bone2", bpy.data.objects[self.armature].pose, "bones", text="")
+        #[(ob.name, ob.name, ob.type) for ob in bpy.context.scene.objects]
+        for i in range(len(spaces.keys())):
+            row = layout.row(align = True)
+            row.prop_search(spaces[i], "armature", bpy.data, "objects", text="")
+            row.prop_search(spaces[i], "bone", bpy.data.objects[self.armature].pose, "bones", text="")
+            row.operator("pg.remove_space", text= "", icon= "X").index = i
+        layout.operator("pg.add_space", text= "Add Space")#.action = "add"
+
 
     def execute(self, context):
         own_armature = context.active_object
         active_bone_name = self.target
-        spaces = "World", self.bone1, self.bone2
+        #spaces = "World", self.bone1, self.bone2
+        spaces = "World", context.active_pose_bone.spaces[0].bone, context.active_pose_bone.spaces[1].bone   #!!!!!
         bone = own_armature.pose.bones[active_bone_name]
 
         prop_name = active_bone_name + "_parent"
@@ -1019,8 +1080,9 @@ class PG_OT_add_space_switching(Operator):
         
         return {"FINISHED"}
     
-       
-
+    
+    
+    
 
 
 class PG_OT_test(Operator):
@@ -1045,6 +1107,7 @@ class PG_OT_test(Operator):
 
 classes = (
     PG_properties,
+    PG_Bone_Spaces,
     PG_OT_find_instances,
     PG_OT_reset_ob_colors,
     PG_OT_optimize,
@@ -1061,6 +1124,8 @@ classes = (
     PG_OT_add_bone,
     PG_OT_simple_controls,
     PG_OT_add_space_switching,
+    PG_OT_add_space,
+    PG_OT_remove_space,
 
     PG_OT_test,
         
@@ -1070,6 +1135,7 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     bpy.types.Scene.pg_tool = bpy.props.PointerProperty(type = PG_properties)
+    bpy.types.PoseBone.spaces = bpy.props.CollectionProperty(type=PG_Bone_Spaces)
 
 def unregister():
     del bpy.types.Scene.pg_tool
