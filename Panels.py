@@ -103,12 +103,13 @@ class VIEW3D_PT_pg_riging(Panel):
         layout = self.layout
         layout.use_property_split = True
         layout.use_property_decorate = False
+        active_bone = context.active_pose_bone
         
         col = layout.column(align=False)
 
         col.operator("pg.add_bone")
         col.operator("pg.create_simple_controls")
-        if context.active_pose_bone.get(context.active_pose_bone.name + "_space") is None:
+        if active_bone and active_bone.get(context.active_pose_bone.name + "_space") is None:
             col.operator("pg.add_space_switching")
         else:
             col.operator("pg.add_space_switching", text="Edit Space Switching")
