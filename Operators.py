@@ -941,8 +941,6 @@ class PG_Bone_Spaces(PropertyGroup):
     armature : StringProperty(name= "Armature")
     bone : StringProperty(name= "Bone")
 
-    {"armature" : "Armature", "bone": "Bone"}
-
 class PG_OT_add_space(Operator):
     """Add parent space"""
     bl_label = "Add space"
@@ -1004,7 +1002,7 @@ class PG_OT_add_space_switching(Operator):
         for i in range(len(spaces.keys())):
             row = layout.row(align = True)
             row.prop_search(spaces[i], "armature", bpy.data, "objects", text="")
-            row.prop_search(spaces[i], "bone", context.active_object.pose, "bones", text="") #bpy.data.objects[self.armature]
+            row.prop_search(spaces[i], "bone", bpy.data.objects[spaces[i].armature].pose, "bones", text="") #bpy.data.objects[self.armature]
             row.operator("pg.remove_space", text= "", icon= "X").index = i
         layout.operator("pg.add_space", text= "Add Space")
 
