@@ -807,7 +807,7 @@ class PG_OT_add_bone(Operator):
 
     name : StringProperty(name="Name", default= "Bone")
     length : FloatProperty(name = 'Length', min = 0, unit= "LENGTH")
-    y_up : BoolProperty(name= "Y up", default= False)
+    y_up : BoolProperty(name= "Y up ralative", default= False)
 
     @classmethod
     def poll(cls, context):
@@ -850,7 +850,15 @@ class PG_OT_simple_controls(Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     ctrl_layer : BoolVectorProperty(name= "Layer", subtype= "LAYER", size= 32)
-    set_wgt : BoolProperty(name = "Set Widgets", description = "Set Cube Widgets for Control Bones", default = False)
+    #set_wgt : BoolProperty(name = "Set Widgets", description = "Set widgets for Control Bones", default = False)
+    wgt_type : EnumProperty(
+            name="Assign Widgets", 
+            items=[("none", "None", ""),
+                   ("cube", "Cube", ""), 
+                   ("sphere", "Sphere", ""), 
+                   ("square", "Square", ""), 
+                   ("circle", "Circle", "")], 
+            default="none")
     wgt_size : FloatProperty(name= "Widget Size", min= 0, soft_max= 1000, default= 1, unit= "LENGTH")
     
     # TODO:
@@ -874,7 +882,8 @@ class PG_OT_simple_controls(Operator):
         
         layout.use_property_split = True
         layout.use_property_decorate = True
-        layout.prop(self, "set_wgt")
+        #layout.prop(self, "set_wgt")
+        layout.prop(self, "wgt_type")
         layout.prop(self, "wgt_size")
 
 
@@ -884,15 +893,7 @@ class PG_OT_simple_controls(Operator):
         def_bones = []
         bone_pairs = {}
         mod = context.object.mode
-        
-        if not obj_exists('WGT_Cube') and self.set_wgt:
-            widget = create_wgt_cube(1 / context.scene.unit_settings.scale_length)
-            bpy.ops.object.select_all(action='DESELECT')
-            context.view_layer.objects.active = avatar_rig
-            context.active_object.select_set(True)
-        else:
-            widget = bpy.data.objects['WGT_Cube']
-        
+
         bpy.ops.object.mode_set_with_submode(mode='EDIT')
         for bone in context.selected_bones:
             def_bones.append(bone)
@@ -917,7 +918,24 @@ class PG_OT_simple_controls(Operator):
                 armature.edit_bones[bone_pairs[bone.name]].parent = armature.edit_bones[bone_pairs[bone.parent.name]]
                 
         
-        # Constraints and widgets             
+        # Constraints and widgets        
+        # !!!!
+        bpy.ops.object.mode_set_with_submode(mode='OBJECT')
+        if self.wgt_type != "none":
+            widget = create_widget(self.wgt_type, 1 / context.scene.unit_settings.scale_length)
+        
+
+        if not obj_exists('WGT_Cube') and self.set_wgt:
+            widget = create_wgt_cube(1 / context.scene.unit_settings.scale_length)
+            bpy.ops.object.select_all(action='DESELECT')
+            context.view_layer.objects.active = avatar_rig
+            context.active_object.select_set(True)
+        else:
+            widget = bpy.data.objects['WGT_Cube']
+        
+
+
+             
         bpy.ops.object.mode_set_with_submode(mode='POSE')
         wgt_sc = self.wgt_size * context.scene.unit_settings.scale_length
         wgt_scale = (wgt_sc, wgt_sc, wgt_sc)
@@ -927,7 +945,7 @@ class PG_OT_simple_controls(Operator):
             avatar_rig.pose.bones[bone].constraints.active.target = avatar_rig
             avatar_rig.pose.bones[bone].constraints.active.subtarget = ctrl
 
-            if self.set_wgt:
+            if self.wgt_type != "none":
                 avatar_rig.pose.bones[ctrl].custom_shape = widget
                 avatar_rig.pose.bones[ctrl].use_custom_shape_bone_size = False
                 avatar_rig.pose.bones[ctrl].custom_shape_scale_xyz = wgt_scale
@@ -937,7 +955,7 @@ class PG_OT_simple_controls(Operator):
         
         return {'FINISHED'}
 
-class PG_Bone_Spaces(PropertyGroup):
+class PG_bone_spaces(PropertyGroup):
     armature : StringProperty(name= "Armature")
     bone : StringProperty(name= "Bone")
 
@@ -1002,7 +1020,7 @@ class PG_OT_add_space_switching(Operator):
         for i in range(len(spaces.keys())):
             row = layout.row(align = True)
             row.prop_search(spaces[i], "armature", bpy.data, "objects", text="")
-            row.prop_search(spaces[i], "bone", bpy.data.objects[spaces[i].armature].pose, "bones", text="") #bpy.data.objects[self.armature]
+            row.prop_search(spaces[i], "bone", bpy.data.objects[spaces[i].armature].pose, "bones", text="")
             row.operator("pg.remove_space", text= "", icon= "X").index = i
         layout.operator("pg.add_space", text= "Add Space")
 
@@ -1075,10 +1093,6 @@ class PG_OT_add_space_switching(Operator):
             constrain.name = prop_name
         
         self.clear_constrain(constrain)
-
-        # for target in constrain.targets:
-        #     target.driver_remove("weight")
-        # constrain.targets.clear()
         
         for num in range(len(con_spaces)):
             constrain.targets.new()
@@ -1127,7 +1141,7 @@ class PG_OT_test(Operator):
 
 classes = (
     PG_properties,
-    PG_Bone_Spaces,
+    PG_bone_spaces,
     PG_OT_find_instances,
     PG_OT_reset_ob_colors,
     PG_OT_optimize,
@@ -1155,7 +1169,7 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     bpy.types.Scene.pg_tool = bpy.props.PointerProperty(type = PG_properties)
-    bpy.types.PoseBone.spaces = bpy.props.CollectionProperty(type=PG_Bone_Spaces)
+    bpy.types.PoseBone.spaces = bpy.props.CollectionProperty(type = PG_bone_spaces)
 
 def unregister():
     del bpy.types.Scene.pg_tool

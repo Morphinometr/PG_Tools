@@ -40,15 +40,64 @@ def bone_exists(arm : Armature, name : str):
             return True
     return False
 
+def create_widget(type: str, size : float):
+    if type == "cube":
+        return create_wgt_cube(size)
+    elif type == "sphere":
+        return create_wgt_sphere(size)
+    elif type == "square":
+        return create_wgt_square(size)
+    elif type == "circle":
+        return create_wgt_circle(size)
+    else:
+        raise ValueError("Widget type is incorrect")
+
 def create_wgt_cube(size : float = 1.0):
     bpy.ops.object.mode_set_with_submode(mode='OBJECT')
     _size = size 
 
     bpy.ops.mesh.primitive_cube_add(size=_size, enter_editmode=False, align='WORLD', location=(0, 0, 0), scale=(1, 1, 1))
     wgt = bpy.context.object
-    wgt.name = "WGT_Cube"
+    wgt.name = "WGT_Cube_1m"
     bpy.ops.object.mode_set_with_submode(mode='EDIT')
     bpy.ops.mesh.delete(type='ONLY_FACE')
+    bpy.ops.object.mode_set_with_submode(mode='OBJECT')
+    return wgt
+
+def create_wgt_sphere(size : float = 1.0):
+    bpy.ops.object.mode_set_with_submode(mode='OBJECT')
+    _size = size 
+
+    bpy.ops.mesh.primitive_circle_add(vertices=32, radius=_size, calc_uvs=False, enter_editmode=False, align='WORLD', location=(0, 0, 0), scale=(1, 1, 1))
+    wgt = bpy.context.object
+    wgt.name = "WGT_Sphere_1m"
+    bpy.ops.object.mode_set_with_submode(mode='EDIT')
+    bpy.ops.mesh.duplicate()
+    bpy.ops.transform.rotate(value=1.5708, orient_axis="X", orient_type="GLOBAL", use_proportional_edit=False)
+    bpy.ops.mesh.duplicate()
+    bpy.ops.transform.rotate(value=1.5708, orient_axis="Z", orient_type="GLOBAL", use_proportional_edit=False)
+    return wgt
+
+def create_wgt_circle(size : float = 1.0):
+    bpy.ops.object.mode_set_with_submode(mode='OBJECT')
+    _size = size 
+
+    bpy.ops.mesh.primitive_circle_add(vertices=32, radius=_size, calc_uvs=False, enter_editmode=False, align='WORLD', location=(0, 0, 0), scale=(1, 1, 1))
+    wgt = bpy.context.object
+    wgt.name = "WGT_Circle_1m"
+    return wgt
+
+def create_wgt_square(size : float = 1.0):
+    bpy.ops.object.mode_set_with_submode(mode='OBJECT')
+    _size = size 
+
+    bpy.ops.mesh.primitive_plane_add(size=_size, calc_uvs=False, enter_editmode=False, align='WORLD', location=(0, 0, 0), scale=(1, 1, 1))
+    wgt = bpy.context.object
+    wgt.name = "WGT_Square_1m"
+    bpy.ops.object.mode_set_with_submode(mode='EDIT')
+    bpy.ops.mesh.delete(type='ONLY_FACE')
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.bevel(offset=_size * 0.125, offset_pct=0, segments=7, affect='VERTICES')
     bpy.ops.object.mode_set_with_submode(mode='OBJECT')
     return wgt
 
