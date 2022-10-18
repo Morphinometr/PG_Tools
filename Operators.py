@@ -421,7 +421,7 @@ class PG_OT_import_weapon(Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.area.type == 'VIEW_3D'
+        return context.area.type == "VIEW_3D" and context.mode == "OBJECT"
 
     def invoke(self, context, event):
         self.weapon_tag = context.scene.pg_tool.weapon_tag
@@ -481,7 +481,7 @@ class PG_OT_import_avatar(Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.area.type == 'VIEW_3D'
+        return context.area.type == "VIEW_3D" and context.mode == "OBJECT"
 
     def invoke(self, context, event):
         self.avatar_tag = context.scene.pg_tool.avatar_tag
