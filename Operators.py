@@ -1102,7 +1102,40 @@ class PG_OT_add_space_switching(Operator):
             target.driver_remove("weight")
         constrain.targets.clear()
     
+#   Video Sequence Editor
+
+#   Create bone with proper scene scaling
+class PG_OT_trim_timeline_to_strips(Operator):
+    """Trims scenes timeline to duration of selected strips. If trim start checked sets scenes start frame to 0"""
+    bl_label = "Trim Timeline to selected strips"
+    bl_idname = "pg.trim_timeline_to_strips"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    trim_start : BoolProperty(name="Trim Start", default= True, description="Set Start frame to 0")
     
+    @classmethod
+    def poll(cls, context):
+        
+        return True
+
+    def execute(self, context):
+        if self.trim_start:
+            start_frame = 0
+        else:
+            start_frame = context.scene.frame_start
+        
+        end_frame = 1
+        for strip in context.selected_sequences:
+            strip.frame_start = start_frame
+            
+            end_frame = max(strip.frame_final_duration - 1, end_frame)
+            
+        context.scene.frame_start = start_frame
+        context.scene.frame_end = end_frame + start_frame
+
+        return {'FINISHED'}
+
+
 
 
 class PG_OT_test(Operator):
@@ -1146,6 +1179,7 @@ classes = (
     PG_OT_add_space_switching,
     PG_OT_add_space,
     PG_OT_remove_space,
+    PG_OT_trim_timeline_to_strips,
 
     PG_OT_test,
         
@@ -1156,11 +1190,13 @@ def register():
         bpy.utils.register_class(cls)
     bpy.types.Scene.pg_tool = bpy.props.PointerProperty(type = PG_properties)
     bpy.types.PoseBone.spaces = bpy.props.CollectionProperty(type=PG_Bone_Spaces)
+    bpy.types.SEQUENCER_MT_context_menu.append(vse_trim_menu)
 
 def unregister():
     del bpy.types.Scene.pg_tool
     for cls in classes:
         bpy.utils.unregister_class(cls)
+    bpy.types.SEQUENCER_MT_context_menu.remove(vse_trim_menu)
         
 if __name__ == "__main__":
     register()

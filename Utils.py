@@ -168,5 +168,8 @@ def color_list(length, steps=10, alpha=1):
             raise ValueError("Too many instanciated objects. Couldn't create enough color variants. Try to increase 'Color steps' parameter")
     return lst
 
-
+def vse_trim_menu(self, context):
+    layout = self.layout
+    layout.separator()
+    layout.operator("pg.trim_timeline_to_strips")
     
