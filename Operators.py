@@ -490,7 +490,7 @@ class PG_OT_import_avatar(Operator):
 
     def execute(self, context):
         
-        if context.collection != "Avatar":
+        if context.collection.name != "Avatar":
             try: 
                 collection = bpy.data.collections['Avatar']
             except Exception:
