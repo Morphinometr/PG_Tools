@@ -922,20 +922,11 @@ class PG_OT_simple_controls(Operator):
         # !!!!
         bpy.ops.object.mode_set_with_submode(mode='OBJECT')
         if self.wgt_type != "none":
-            widget = create_widget(self.wgt_type, 1 / context.scene.unit_settings.scale_length)
+            widget = get_widget(self.wgt_type, 1 / context.scene.unit_settings.scale_length)
         
-
-        if not obj_exists('WGT_Cube') and self.set_wgt:
-            widget = create_wgt_cube(1 / context.scene.unit_settings.scale_length)
-            bpy.ops.object.select_all(action='DESELECT')
-            context.view_layer.objects.active = avatar_rig
-            context.active_object.select_set(True)
-        else:
-            widget = bpy.data.objects['WGT_Cube']
-        
-
-
-             
+        # reset active object after widget creation
+        context.view_layer.objects.active = avatar_rig
+                   
         bpy.ops.object.mode_set_with_submode(mode='POSE')
         wgt_sc = self.wgt_size * context.scene.unit_settings.scale_length
         wgt_scale = (wgt_sc, wgt_sc, wgt_sc)
