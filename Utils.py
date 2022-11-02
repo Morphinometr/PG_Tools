@@ -215,8 +215,29 @@ def color_list(length, steps=10, alpha=1):
         if success:
             continue
         else:    
-            raise ValueError("Too many instanciated objects. Couldn't create enough color variants. Try to increase 'Color steps' parameter")
+            raise ValueError("Too many instanciated objects. Couldn't create enough color variants. Something is very wrong in calculation number of variants")
     return lst
 
-
+def match_bone_transform(bone_pairs):
+    """Expects a dictionary with Pose bone pairs. {transform : source}
     
+    :transform: the bone that will be transformed to source bone. Type: bpy.types.PoseBone
+    :source: reference bone. Type: bpy.types.PoseBone
+    """
+
+    def recurse(bone, bones):
+        #TODO: make it work for different objects i.e. make conversion to global matrix and vice versa        
+        bone.matrix = bones[bone].matrix
+        bpy.context.view_layer.update()
+
+        for child in bone.children:
+            recurse(child, bones)
+    
+    bones = bone_pairs.keys()    
+    top_level = [bone for bone in bones if bone.parent not in bones]  
+
+    for bone in top_level:
+        recurse(bone, bone_pairs)
+    
+
+

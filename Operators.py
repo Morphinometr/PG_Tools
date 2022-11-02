@@ -860,10 +860,10 @@ class PG_OT_simple_controls(Operator):
                    ("circle", "Circle", "")], 
             default="none")
     wgt_size : FloatProperty(name= "Widget Size", min= 0, soft_max= 1000, default= 1, unit= "LENGTH")
+    match_transform : BoolProperty(name = "Match Transform", description = "Move Control bones to Deformation bones in World Space", default = True )
     
     # TODO:
     # adaptive_wgt : BoolProperty(name = "Adaptive WGTs", description = "", default = True)
-    # adj_transform : BoolProperty(name = "Adjust Transform", description = "Move Control Bones to Deformation Bones Transform", default = False )
     
 
     @classmethod
@@ -882,16 +882,16 @@ class PG_OT_simple_controls(Operator):
         
         layout.use_property_split = True
         layout.use_property_decorate = True
-        #layout.prop(self, "set_wgt")
+        layout.prop(self, "match_transform")
         layout.prop(self, "wgt_type")
         layout.prop(self, "wgt_size")
 
 
     def execute(self, context):
-        avatar_rig = context.active_object
-        armature = avatar_rig.data
+        armature_obj = context.active_object
+        armature = armature_obj.data
         def_bones = []
-        bone_pairs = {}
+        bone_pair_names = {}
         mod = context.object.mode
 
         bpy.ops.object.mode_set_with_submode(mode='EDIT')
@@ -907,7 +907,7 @@ class PG_OT_simple_controls(Operator):
             #deselect old bones
             bone.select = bone.select_head = bone.select_tail = False
             
-            bone_pairs[bone.name] = ctrl_bone.name  #Solves issue if name already existed
+            bone_pair_names[bone.name] = ctrl_bone.name  #Solves issue if name already existed
     
         for bone in context.selected_bones:
             bone.layers = self.ctrl_layer
@@ -915,32 +915,49 @@ class PG_OT_simple_controls(Operator):
         # Relations
         for bone in def_bones:
             if bone.parent in def_bones:
-                armature.edit_bones[bone_pairs[bone.name]].parent = armature.edit_bones[bone_pairs[bone.parent.name]]
+                armature.edit_bones[bone_pair_names[bone.name]].parent = armature.edit_bones[bone_pair_names[bone.parent.name]]
                 
         
         # Constraints and widgets        
-        # !!!!
         bpy.ops.object.mode_set_with_submode(mode='OBJECT')
         if self.wgt_type != "none":
             widget = get_widget(self.wgt_type, 1 / context.scene.unit_settings.scale_length)
         
         # reset active object after widget creation
-        context.view_layer.objects.active = avatar_rig
+        context.view_layer.objects.active = armature_obj
                    
         bpy.ops.object.mode_set_with_submode(mode='POSE')
         wgt_sc = self.wgt_size * context.scene.unit_settings.scale_length
         wgt_scale = (wgt_sc, wgt_sc, wgt_sc)
 
-        for bone, ctrl in bone_pairs.items():
-            avatar_rig.pose.bones[bone].constraints.new('COPY_TRANSFORMS')
-            avatar_rig.pose.bones[bone].constraints.active.target = avatar_rig
-            avatar_rig.pose.bones[bone].constraints.active.subtarget = ctrl
+        bone_constraints = {}
+        for bone, ctrl in bone_pair_names.items():
+            armature_obj.pose.bones[bone].constraints.new('COPY_TRANSFORMS')
+            bone_constraints[bone] = armature_obj.pose.bones[bone].constraints.active
+            bone_constraints[bone].target = armature_obj
+            bone_constraints[bone].subtarget = ctrl
+            
+
 
             if self.wgt_type != "none":
-                avatar_rig.pose.bones[ctrl].custom_shape = widget
-                avatar_rig.pose.bones[ctrl].use_custom_shape_bone_size = False
-                avatar_rig.pose.bones[ctrl].custom_shape_scale_xyz = wgt_scale
+                armature_obj.pose.bones[ctrl].custom_shape = widget
+                armature_obj.pose.bones[ctrl].use_custom_shape_bone_size = False
+                armature_obj.pose.bones[ctrl].custom_shape_scale_xyz = wgt_scale
 
+        # match transform
+        if self.match_transform:
+            bone_pairs = {}
+            for def_name, ctrl_name in bone_pair_names.items():
+                bone_pairs[armature_obj.pose.bones[ctrl_name]] = armature_obj.pose.bones[def_name]
+            
+            # remove copy transform constraint infuence
+            for constraint in bone_constraints.values():               
+                constraint.influence = 0
+
+            match_bone_transform(bone_pairs)
+
+            for constraint in bone_constraints.values():               
+                constraint.influence = 1
 
         bpy.ops.object.mode_set_with_submode(mode=mod)
         
