@@ -950,7 +950,7 @@ class PG_OT_simple_controls(Operator):
             for def_name, ctrl_name in bone_pair_names.items():
                 bone_pairs[armature_obj.pose.bones[ctrl_name]] = armature_obj.pose.bones[def_name]
             
-            # remove copy transform constraint infuence
+            # temporaly remove copy transform constraint infuence
             for constraint in bone_constraints.values():               
                 constraint.influence = 0
 

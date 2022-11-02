@@ -226,8 +226,10 @@ def match_bone_transform(bone_pairs):
     """
 
     def recurse(bone, bones):
-        #TODO: make it work for different objects i.e. make conversion to global matrix and vice versa        
-        bone.matrix = bones[bone].matrix
+        # Matrix math to ability to use it for different objects        
+        mat = bones[bone].id_data.matrix_world @ bones[bone].matrix 
+        bone.matrix = bone.id_data.matrix_world.inverted() @ mat
+
         bpy.context.view_layer.update()
 
         for child in bone.children:
