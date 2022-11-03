@@ -639,7 +639,7 @@ class PG_OT_fix_import(Operator):
         
        
        
-        #Group Bone Channels
+        # TODO: Group animation bone channels
 #        armature.animation_data.action.groups.new('1')
 #        D.objects['royal_cobra_spirit'].animation_data.action.groups['New Group'].channels.items()
         
@@ -651,9 +651,9 @@ class PG_OT_combine_rigs(Operator):
     bl_label = "Combine Rigs"
     bl_idname = "pg.combine_rigs"
     bl_options = {'REGISTER', 'UNDO'}
-    
+
     @classmethod
-    #make sure that there are 2 objects selected, one of with is active and both of them are armatures
+    # Making sure that there are 2 objects selected, one of with is active and both of them are armatures
     def poll(cls, context):
         if bpy.context.active_object is None :
             return False
@@ -668,13 +668,19 @@ class PG_OT_combine_rigs(Operator):
         list = context.selected_objects
         avatar_rig = context.active_object
         list.remove(avatar_rig)
-        weapon_rig =list[0]
+        weapon_rig = list[0]
+        avatar_name = str(context.scene.pg_tool.avatar_tag)
+        weapon_tag = str(context.scene.pg_tool.weapon_tag)
+        num = str(context.scene.pg_tool.weapon_number)
+        avatar_bone = weapon_bone = inner_bone = None
+        bone_layers = [2, 6, 7, 8, 10]
+        weapon_rig_children = weapon_rig.children
         
         move_bones_to_layer(weapon_rig.data.bones, layer = 10) 
-        
-        #join rigs
+
+        # Joining rigs
         bpy.ops.object.join()
-        
+
         #rotate avatar arms
         for bone in avatar_rig.data.bones:
             if bone.name.lower() == 'fps_player_arm_right':
@@ -685,17 +691,15 @@ class PG_OT_combine_rigs(Operator):
                 avatar_arm_R = bone
             if bone.name.lower() == 'ctrl_fk_arm_l':
                 avatar_arm_L = bone
-        
-        
-        #TODO: Make rotations via transform matrix
+              
         bpy.ops.object.mode_set_with_submode(mode='POSE')
         for bone in avatar_rig.pose.bones:
             bone.bone.select = False
             
-        bpy.data.armatures[avatar_rig.data.name].layers[2] = True
-        bpy.data.armatures[avatar_rig.data.name].layers[10] = True
+        for layer in bone_layers:
+            bpy.data.armatures[avatar_rig.data.name].layers[layer] = True
         
-        
+        #TODO: Make rotations via transform matrix
         if addon_installed('space_view3d_copy_attributes'):
             #right arm rotation
             avatar_rig.data.bones.active = avatar_rig.pose.bones[weapon_arm_R.name].bone
@@ -714,8 +718,6 @@ class PG_OT_combine_rigs(Operator):
             bpy.ops.transform.rotate(value=1.5708, orient_axis='X', orient_type='LOCAL')
             avatar_rig.pose.bones[avatar_arm_L.name].bone.select = False
         
-        
-        
         #constrain weapon arms
         #right
         avatar_rig.pose.bones[weapon_arm_R.name].constraints.new('COPY_TRANSFORMS')
@@ -728,71 +730,75 @@ class PG_OT_combine_rigs(Operator):
         avatar_rig.pose.bones[weapon_arm_L.name].constraints.new('COPY_TRANSFORMS')
         avatar_rig.pose.bones[weapon_arm_L.name].constraints.active.target = avatar_rig
         avatar_rig.pose.bones[weapon_arm_L.name].constraints.active.subtarget = 'MCH_arm_L'
-        
-        #parenting weapon root bone to its proper parent in avatar rig
+         
         bpy.ops.object.mode_set_with_submode(mode='EDIT')
-        
-        """
-        character_holder = avatar_rig.data.edit_bones['CharacterHolder']
-        
-        #weap_prefab == ContentPres_weaponXXXX
-        for bone in character_holder.children:
-            if bone.name.find('Weapon') > -1:
-                weap_prefab = bone
-                break
-        #FIXME!!
-
-        for bone in weap_prefab.children:
-            if bone.name.find('Weapon') > -1:
-                weapon = bone
-            if bone.name.find('avatar') > -1:
-                avatar = bone
-        for bone in weapon.children:
-            if bone.name.find('Weapon') > -1:
-                inner = bone
-                break
-        """
+        # Finding bones by ids
         for bone in avatar_rig.data.edit_bones:
             if bone.get("bone_id") is not None:
                 if bone.get("bone_id") == "avatar_root":
-                    avatar = bone
+                    avatar_bone = bone
                 if bone.get("bone_id") == "weapon_number":
-                    weapon = bone
+                    weapon_bone = bone
                 if bone.get("bone_id") == "weapon_inner":
-                    inner = bone
+                    inner_bone = bone
         
-        weapon_tag = str(context.scene.pg_tool.weapon_tag)
-        avatar_rig.data.edit_bones[weapon_tag].parent = inner
-        bpy.ops.object.mode_set_with_submode(mode='OBJECT')
+        # Fallback
+        if not avatar_bone:
+            for bone in avatar_rig.data.edit_bones:
+                if bone.name[0:6].lower() == "avatar" and len(bone.parent_recursive) < 3:
+                    avatar_bone = bone
+                    print(avatar_bone)
         
-        #rename bones
-        num = str(context.scene.pg_tool.weapon_number)
+        if not weapon_bone:
+            for bone in avatar_rig.data.edit_bones:
+                if bone.name[0:-4].lower() == "weapon":
+                    weapon_bone = bone
+                    print(weapon_bone)
+
+        if not inner_bone:
+            for bone in weapon_bone.children:
+                if bone.name[0:6].lower() == "weapon":
+                    inner_bone = bone
+
+        if avatar_rig.data.edit_bones.find(weapon_tag) < 0:
+            self.report({'ERROR'}, "There no bone named by Weapon TAG in weapon rig.")
+            return {"CANCELLED"}
+
+        # Parenting weapon root bone to its proper parent in avatar rig
+        avatar_rig.data.edit_bones[weapon_tag].parent = inner_bone
+
+        # Renaming bones
         if num != '':
-            #weap_prefab.name = weap_prefab.name[0:-4] + num
-            print(weapon.name)
-            weapon.name = str(weapon.name)[0:-4] + num
-            print(weapon.name)
-            inner.name = str(inner.name)[0:6] + num + str(inner.name)[10:]
+            weapon_bone.name = "Weapon" + num
+            inner_bone.name = "Weapon" + num + str(inner_bone.name)[10:]
             
-        avatar_name = str(context.scene.pg_tool.avatar_tag)
         if avatar_name != '':
             try: 
-                avatar.name = avatar_name
+                avatar_bone.name = avatar_name
             except:
                 self.report({'WARNING'}, "Couldn't find Avatar. Avatar bone not renamed")
-                
-        #pin weapon mesh to avatar rig
-        weapon_mesh = None
-        for name, ob in bpy.data.objects.items():
-            if ob.type == 'MESH' and name.startswith(weapon_tag): #not all weapon meshes has '_mesh' postfix
+
+        bpy.ops.object.mode_set_with_submode(mode='OBJECT')
+        # Pining weapon mesh to avatar rig
+        weapon_mesh = arms_mesh = None
+        for ob in weapon_rig_children:
+            if ob.type != 'MESH':
+                continue
+            if ob.name.startswith(weapon_tag): #not all weapon meshes has '_mesh' postfix
                 weapon_mesh = ob
-                break #we take the first match
+            if ob.name.lower() == "arms_mesh":
+                arms_mesh = ob
         
         if weapon_mesh is not None:
             weapon_mesh.modifiers[0].object = avatar_rig
+            # Fixing rotation by parent armature
+            weapon_mesh.matrix_world = weapon_mesh.matrix_world.inverted() @ weapon_mesh.parent.matrix_world
         else:
             self.report({'WARNING'}, "Couldn't find weapon mesh. Armature not assigned")
-        
+        if arms_mesh is not None:
+            arms_mesh.modifiers[0].object = avatar_rig
+            arms_mesh.matrix_world = arms_mesh.matrix_world.inverted() @ arms_mesh.parent.matrix_world
+   
         return {'FINISHED'}
 
 
