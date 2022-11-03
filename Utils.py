@@ -241,5 +241,8 @@ def match_bone_transform(bone_pairs):
     for bone in top_level:
         recurse(bone, bone_pairs)
     
-
+def vse_trim_menu(self, context):
+    layout = self.layout
+    layout.separator()
+    layout.operator("pg.trim_timeline_to_strips")
 
