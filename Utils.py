@@ -10,35 +10,27 @@ def get_addon_name(context):
             print(mod)
             return mod
 
-def recurLayerCollection(layerColl, collName):
-    """Recursivly transverse layer_collection for a particular name"""
-    found = None
-    if (layerColl.name == collName):
-        return layerColl
-    for layer in layerColl.children:
-        found = recurLayerCollection(layer, collName)
-        if found:
-            return found
+def get_layer_collection(collection_name : str):
+    def recurLayerCollection(layerColl, collName):
+        """Recursivly transverse layer_collection for a particular name"""
+        found = None
+        print(layerColl.name)
+        if layerColl.name == collName:
+            print(layerColl)
+            return layerColl
+        
+        for layer in layerColl.children:  
+            found = recurLayerCollection(layer, collName)
+            if found:
+                return found
 
-##Switching active Collection to active Object selected
-#    obj = bpy.context.object
-#    ucol = obj.users_collection
-#    for i in ucol:
-#        layer_collection = bpy.context.view_layer.layer_collection
-#        layerColl = recurLayerCollection(layer_collection, i.name)
-#        bpy.context.view_layer.active_layer_collection = layerColl
+    return recurLayerCollection(bpy.context.view_layer.layer_collection, collection_name)    
 
 def get_obj(name : str):
     for ob in bpy.data.objects:
         if ob.name == name:
             return ob
     return None
-
-# def bone_exists(arm : Armature, name : str):
-#     for b in arm.edit_bones:
-#         if b.name == name:
-#             return True
-#     return False
 
 def get_widget(type: str, size : float):
     widget_name = "WGT_" + type.capitalize() + "_1m"

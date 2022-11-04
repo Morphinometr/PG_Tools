@@ -435,10 +435,9 @@ class PG_OT_import_weapon(Operator):
             except Exception:
                 collection = bpy.data.collections.new('Weapon')
                 bpy.context.scene.collection.children.link(collection)
-                
-        layer_collection = bpy.context.view_layer.layer_collection.children[collection.name]
+
+        layer_collection = get_layer_collection(collection.name)
         bpy.context.view_layer.active_layer_collection = layer_collection
-        
         
         addon = context.preferences.addons[get_addon_name(context)]
         
@@ -454,7 +453,7 @@ class PG_OT_import_weapon(Operator):
                                   use_fix_attributes=True, 
                                   my_import_normal='Import', 
                                   use_auto_smooth=False, 
-                                  my_scale=1, 
+                                  my_scale=100, 
                                   use_reset_mesh_origin=False)
         
         for path in textures_paths:
@@ -497,9 +496,8 @@ class PG_OT_import_avatar(Operator):
                 collection = bpy.data.collections.new('Avatar')
                 bpy.context.scene.collection.children.link(collection)
                 
-        layer_collection = bpy.context.view_layer.layer_collection.children[collection.name]
+        layer_collection = get_layer_collection(collection.name)
         bpy.context.view_layer.active_layer_collection = layer_collection
-        
         
         addon = context.preferences.addons[get_addon_name(context)]
         
@@ -515,7 +513,7 @@ class PG_OT_import_avatar(Operator):
                                   use_fix_attributes=True, 
                                   my_import_normal='Import', 
                                   use_auto_smooth=False, 
-                                  my_scale=1, 
+                                  my_scale=100, 
                                   use_reset_mesh_origin=False)
         
         for path in textures_paths:
