@@ -10,9 +10,17 @@ def get_addon_name(context):
             print(mod)
             return mod
 
+def get_collection(name : str):
+    try: 
+        collection = bpy.data.collections[name]
+    except Exception:
+        collection = bpy.data.collections.new(name)
+        bpy.context.scene.collection.children.link(collection)
+    return collection
+
 def get_layer_collection(collection_name : str):
     def recurLayerCollection(layerColl, collName):
-        """Recursivly transverse layer_collection for a particular name"""
+        """Recursively transverse layer_collection for a particular name"""
         found = None
         print(layerColl.name)
         if layerColl.name == collName:
@@ -207,7 +215,7 @@ def color_list(length, steps=10, alpha=1):
         if success:
             continue
         else:    
-            raise ValueError("Too many instanciated objects. Couldn't create enough color variants. Something is very wrong in calculation number of variants")
+            raise ValueError("Too many instantiated objects. Couldn't create enough color variants. Something is very wrong in calculation number of variants")
     return lst
 
 def match_bone_transform(bone_pairs):

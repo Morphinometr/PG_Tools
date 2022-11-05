@@ -43,7 +43,9 @@ class PG_properties(bpy.types.PropertyGroup):
     weapon_number : StringProperty(name="Weapon Number", default = "")
     avatar_tag : StringProperty(name="Avatar Tag", default = "")
     
-    
+class PG_bone_spaces(PropertyGroup):
+    armature : StringProperty(name= "Armature")#, override={"LIBRARY_OVERRIDABLE"})
+    bone : StringProperty(name= "Bone")#, override={"LIBRARY_OVERRIDABLE"})
 
 #   Operators    
 #   Modeling
@@ -417,7 +419,7 @@ class PG_OT_import_weapon(Operator):
 
     weapon_tag : StringProperty(name = "Weapon tag" )
     pixelize : BoolProperty(name = "Pixelize", description = "Make imported textures pixelated", default = True)
-    fix_materials : BoolProperty(name = "Flatten materaials", description = "set 0 in metallness, specular, emission properties in imported materials", default = True)
+    fix_materials : BoolProperty(name = "Flatten materials", description = "set 0 in metalness, specular, emission properties in imported materials", default = True)
 
     @classmethod
     def poll(cls, context):
@@ -429,12 +431,7 @@ class PG_OT_import_weapon(Operator):
         return self.execute(context)
 
     def execute(self, context):
-        try: 
-            collection = bpy.data.collections['Weapon']
-        except Exception:
-            collection = bpy.data.collections.new('Weapon')
-            bpy.context.scene.collection.children.link(collection)
-
+        collection = get_collection("Weapon")
         layer_collection = get_layer_collection(collection.name)
         bpy.context.view_layer.active_layer_collection = layer_collection
         
@@ -470,7 +467,7 @@ class PG_OT_import_avatar(Operator):
 
     avatar_tag : StringProperty(name = "Avatar Name" )
     pixelize : BoolProperty(name = "Pixelize", description = "Make imported textures pixelated", default = True)
-    fix_materials : BoolProperty(name = "Flatten materaials", description = "set 0 in metallness, specular, emission properties in imported materials", default = True)
+    fix_materials : BoolProperty(name = "Flatten materials", description = "set 0 in metalness, specular, emission properties in imported materials", default = True)
 
     @classmethod
     def poll(cls, context):
@@ -482,13 +479,7 @@ class PG_OT_import_avatar(Operator):
         return self.execute(context)
 
     def execute(self, context):
-        
-        try: 
-            collection = bpy.data.collections['Avatar']
-        except Exception:
-            collection = bpy.data.collections.new('Avatar')
-            bpy.context.scene.collection.children.link(collection)
-                
+        collection = get_collection("Avatar")         
         layer_collection = get_layer_collection(collection.name)
         bpy.context.view_layer.active_layer_collection = layer_collection
         
@@ -537,14 +528,14 @@ class PG_OT_fix_import(Operator):
         scene = context.scene
         collection = context.collection
         
-        emptys = []
+        empties = []
         meshes = []
         armature = None
         
         #lookup for imported objects
         for name, id in collection.objects.items():
             if id.type == 'EMPTY':
-                emptys.append(id)
+                empties.append(id)
             elif id.type == 'ARMATURE':
                 armature = id          
             elif id.type == 'MESH':
@@ -563,9 +554,8 @@ class PG_OT_fix_import(Operator):
         except:
             pass
         
-        #
         if armature.parent == None:
-            self.report({'ERROR'}, 'Armature has no parent')
+            self.report({'WARNING'}, 'Armature has no parent')
             return {'CANCELLED'} 
         
         if scene.pg_tool.weapon_tag == '':
@@ -573,29 +563,27 @@ class PG_OT_fix_import(Operator):
         
         tag = scene.pg_tool.weapon_tag
         
-        
         #create trash collection
-        if bpy.data.collections.find('trash') < 0:
-            trash_col = bpy.data.collections.new('trash')
-            collection.children.link(trash_col)
-        else: trash_col = bpy.data.collections['trash']
+        trash_col = get_collection("Trashcan")
+        trash_lcol = get_layer_collection("Trashcan")
+        trash_lcol.exclude = True
               
         context.view_layer.objects.active = armature  #Set armature as Active Object
         
         #for Blender exporter 
         if armature.data.bones.find(tag) == 0:
-             armature.data.bones[tag].name += ' 1'        
+            armature.data.bones[tag].name += ' 1'        
 
         #go to Edit Mode
         mod = context.object.mode
         bpy.ops.object.mode_set_with_submode(mode='EDIT')
 
-        #create a bone in the location anorientation of Armature parent
+        #create a bone in the location and orientation of Armature parent
         bpy.ops.armature.bone_primitive_add(name=tag)
         armature.data.edit_bones[tag].matrix = armature.parent.matrix_world
         armature.data.edit_bones[tag].length = 0.1/context.scene.unit_settings.scale_length
         
-        #parent all bones without parent to newely created bone
+        #parent all bones without parent to newly created bone
         for name, id in armature.data.bones.items():
             if id.name == tag:
                 continue
@@ -612,15 +600,11 @@ class PG_OT_fix_import(Operator):
         armature.matrix_world = matrix
         
         #move to trash collection
-        for ob in emptys:
+        for ob in empties:
             trash_col.objects.link(ob)
             collection.objects.unlink(ob)
         
-        #emptys.remove(parent) #remove solved empty from the list
-        
-        '''TODO: Hide Trash collection in outliner'''
-        #context.view_layer.layer_collection.children[trash_col.name].exclude = True
-        #trash_col.hide_render = True
+        #empties.remove(parent) #remove solved empty from the list
         
        
        
@@ -953,10 +937,6 @@ class PG_OT_simple_controls(Operator):
         bpy.ops.object.mode_set_with_submode(mode=mod)
         
         return {'FINISHED'}
-
-class PG_bone_spaces(PropertyGroup):
-    armature : StringProperty(name= "Armature")#, override={"LIBRARY_OVERRIDABLE"})
-    bone : StringProperty(name= "Bone")#, override={"LIBRARY_OVERRIDABLE"})
 
 class PG_OT_add_space(Operator):
     """Add parent space"""
