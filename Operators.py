@@ -429,12 +429,11 @@ class PG_OT_import_weapon(Operator):
         return self.execute(context)
 
     def execute(self, context):
-        if context.collection != "Weapon":
-            try: 
-                collection = bpy.data.collections['Weapon']
-            except Exception:
-                collection = bpy.data.collections.new('Weapon')
-                bpy.context.scene.collection.children.link(collection)
+        try: 
+            collection = bpy.data.collections['Weapon']
+        except Exception:
+            collection = bpy.data.collections.new('Weapon')
+            bpy.context.scene.collection.children.link(collection)
 
         layer_collection = get_layer_collection(collection.name)
         bpy.context.view_layer.active_layer_collection = layer_collection
@@ -448,14 +447,9 @@ class PG_OT_import_weapon(Operator):
         textures_paths.append(project_path + "\\Assets\\Resources\\WeaponSkinsV2\\WeaponSkinAssets\\Share4skins")
         textures_paths.append(project_path + "\\Assets\\Sources\\Textures")
         
-        bpy.ops.better_import.fbx(filepath=weapon_path, 
-                                  use_auto_bone_orientation=False, 
-                                  use_fix_attributes=True, 
-                                  my_import_normal='Import', 
-                                  use_auto_smooth=False, 
-                                  my_scale=100, 
-                                  use_reset_mesh_origin=False)
-        
+        from .pg_tools_settings import better_import        
+        bpy.ops.better_import.fbx(filepath=weapon_path, **better_import["pg_default"])
+             
         for path in textures_paths:
             bpy.ops.file.find_missing_files(directory=path)
         
@@ -489,12 +483,11 @@ class PG_OT_import_avatar(Operator):
 
     def execute(self, context):
         
-        if context.collection.name != "Avatar":
-            try: 
-                collection = bpy.data.collections['Avatar']
-            except Exception:
-                collection = bpy.data.collections.new('Avatar')
-                bpy.context.scene.collection.children.link(collection)
+        try: 
+            collection = bpy.data.collections['Avatar']
+        except Exception:
+            collection = bpy.data.collections.new('Avatar')
+            bpy.context.scene.collection.children.link(collection)
                 
         layer_collection = get_layer_collection(collection.name)
         bpy.context.view_layer.active_layer_collection = layer_collection
@@ -508,17 +501,11 @@ class PG_OT_import_avatar(Operator):
         textures_paths.append(project_path + "\\Assets\\Sources\\battle_royale\\Textures")
         textures_paths.append(project_path + "\\Assets\\Resources\\WeaponSkinsV2\\WeaponSkinAssets\\Share4skins")
         
-        bpy.ops.better_import.fbx(filepath=weapon_path, 
-                                  use_auto_bone_orientation=False, 
-                                  use_fix_attributes=True, 
-                                  my_import_normal='Import', 
-                                  use_auto_smooth=False, 
-                                  my_scale=100, 
-                                  use_reset_mesh_origin=False)
+        from .pg_tools_settings import better_import        
+        bpy.ops.better_import.fbx(filepath=weapon_path, **better_import["pg_default"])
         
         for path in textures_paths:
             bpy.ops.file.find_missing_files(directory=path)
-        
 
         if self.pixelize:
             texture_pixel_filter(context)
@@ -968,8 +955,8 @@ class PG_OT_simple_controls(Operator):
         return {'FINISHED'}
 
 class PG_bone_spaces(PropertyGroup):
-    armature : StringProperty(name= "Armature")
-    bone : StringProperty(name= "Bone")
+    armature : StringProperty(name= "Armature")#, override={"LIBRARY_OVERRIDABLE"})
+    bone : StringProperty(name= "Bone")#, override={"LIBRARY_OVERRIDABLE"})
 
 class PG_OT_add_space(Operator):
     """Add parent space"""
@@ -993,7 +980,7 @@ class PG_OT_remove_space(Operator):
     bl_idname = "pg.remove_space"
     #bl_options = {'REGISTER', 'UNDO'}
 
-    index : IntProperty(name="index")
+    index : IntProperty(name="index")#, override={"LIBRARY_OVERRIDABLE"})
 
     def execute(self, context):
         context.active_pose_bone.spaces.remove(self.index)
@@ -1215,7 +1202,9 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     bpy.types.Scene.pg_tool = bpy.props.PointerProperty(type = PG_properties)
-    bpy.types.PoseBone.spaces = bpy.props.CollectionProperty(type = PG_bone_spaces)
+    bpy.types.PoseBone.spaces = bpy.props.CollectionProperty(type = PG_bone_spaces) #, 
+                                                            # options={'LIBRARY_EDITABLE'},
+			                                                # override={'LIBRARY_OVERRIDABLE', 'USE_INSERTION'},)
     bpy.types.SEQUENCER_MT_context_menu.append(vse_trim_menu)
 
 def unregister():
