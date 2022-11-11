@@ -444,7 +444,7 @@ class PG_OT_set_tex_density(Operator):
                 scene.texToolsSettings.texel_density = float(scene.pg_tool.px_density) * context.scene.unit_settings.scale_length
             
             old_type = bpy.context.area.type
-            bpy.context.area.type = "IMAGE_EDITOR"
+            bpy.context.area.type = "UV_EDITOR"
             bpy.ops.uv.textools_texel_density_set()
             bpy.context.area.type = old_type
             
