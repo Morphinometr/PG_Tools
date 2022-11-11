@@ -186,6 +186,16 @@ def texture_pixel_filter(context):
     for tex in textures:
         tex.interpolation = 'Closest'
 
+def unwrap(all=False):
+    if all:
+        bpy.ops.mesh.select_all(action = 'SELECT')
+    bpy.ops.uv.unwrap(method='ANGLE_BASED', margin=0)
+    pg_tool = bpy.context.scene.pg_tool
+    bpy.ops.pg.set_tex_density(size=pg_tool.tex_size, 
+                                tex_size_x=pg_tool.tex_size_custom_x, 
+                                tex_size_y=pg_tool.tex_size_custom_y, 
+                                density=pg_tool.px_density, 
+                                density_custom=pg_tool.px_density_custom)
 
 def flatten_materials(context):
     materials = get_materials(context)

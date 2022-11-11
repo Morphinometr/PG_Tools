@@ -141,10 +141,10 @@ class PG_OT_optimize(Operator):
        
         return {'FINISHED'}
 
-class PG_OT_unwrap(Operator):
+class PG_OT_unwrap_all(Operator):
     """Unwrap mesh"""
     bl_label = "Unwrap"
-    bl_idname = "pg.unwrap"
+    bl_idname = "pg.unwrap_all"
     bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
@@ -168,16 +168,40 @@ class PG_OT_unwrap(Operator):
         bpy.ops.mesh.mark_seam(clear=False)
 
         #unwrap
-        bpy.ops.mesh.select_all(action = 'SELECT')
-        bpy.ops.uv.unwrap(method='ANGLE_BASED', margin=0)
+        unwrap(all=True)
 
+        bpy.ops.object.mode_set_with_submode(mode=mod)
+    
+        return {'FINISHED'}
+
+class PG_OT_unwrap_selected(Operator):
+    """Unwrap mesh"""
+    bl_label = "Unwrap"
+    bl_idname = "pg.unwrap_selected"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    @classmethod
+    def poll(cls, context):
+        if bpy.context.active_object is None:
+            return False
+        
+        return (context.area.type == 'VIEW_3D' and 
+                context.active_object.type == 'MESH' and 
+                context.active_object.select_get()
+                )
+            
+    def execute(self, context):
+        mod = context.object.mode
+        bpy.ops.object.mode_set_with_submode(mode='EDIT')
+        
+        unwrap()
         
         bpy.ops.object.mode_set_with_submode(mode=mod)
     
         return {'FINISHED'}
 
 class PG_OT_test_material(Operator):
-    """Add test meterial"""
+    """Add test material"""
     bl_label = "Test Material"
     bl_idname = "pg.test_material"
     bl_options = {'REGISTER', 'UNDO'}
@@ -324,16 +348,16 @@ class PG_OT_reload_textures(Operator):
     
         return {'FINISHED'}
     
-#   Interaraction with texel density addon
+#   Interaction with texel density addon
 
-class PG_OT_set_tex_desity(Operator):
+class PG_OT_set_tex_density(Operator):
     """Set texel density for selected faces"""
     bl_label = "Set Texel Density"
-    bl_idname = "pg.set_tex_desity"
+    bl_idname = "pg.set_tex_density"
     bl_options = {'REGISTER', 'UNDO'}
     
     size : EnumProperty(
-        name = 'Texture Dimentions', 
+        name = 'Texture Dimensions', 
         items = [('16', '16x16', ''),
                  ('32', '32x32', ''),
                  ('64', '64x64', ''),
@@ -379,8 +403,8 @@ class PG_OT_set_tex_desity(Operator):
         self.tex_size_x = pg_tool.tex_size_custom_x
         self.tex_size_y = pg_tool.tex_size_custom_y
 
-        self.density = context.scene.pg_tool.px_density
-        self.density_custom = context.scene.pg_tool.px_density_custom
+        self.density = pg_tool.px_density
+        self.density_custom = pg_tool.px_density_custom
                     
         return self.execute(context)
         
@@ -1157,11 +1181,12 @@ classes = (
     PG_OT_find_instances,
     PG_OT_reset_ob_colors,
     PG_OT_optimize,
-    PG_OT_unwrap,
+    PG_OT_unwrap_all,
+    PG_OT_unwrap_selected,
     PG_OT_test_material,
     PG_OT_test_texture,
     PG_OT_texture_pixel_filter,
-    PG_OT_set_tex_desity,
+    PG_OT_set_tex_density,
     PG_OT_reload_textures,
     PG_OT_import_avatar,
     PG_OT_import_weapon,

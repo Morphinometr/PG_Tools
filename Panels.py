@@ -69,31 +69,31 @@ class VIEW3D_PT_pg_modeling(Panel):
             row.prop(pg_tool, 'tex_size_custom_x', text='')
             row.prop(pg_tool, 'tex_size_custom_y', text='')
         
-        layout.operator("pg.unwrap")
-        
-        
-        box = layout.box()
         if addon_installed('Texel_Density'): 
-            column = box.column(align=True)
+            column = layout.column(align=True)
             row = column.row(align = True)
             
-            row.operator("pg.set_tex_desity")
+            row.operator("pg.set_tex_density")
             row.prop(pg_tool, 'px_density', text='')
             
             if scene.pg_tool.px_density == 'custom':
                 column.prop(pg_tool, 'px_density_custom', text='')     
         else:
-            box.label(text = '"Texel Density" addon not found')
+            layout.label(text = '"Texel Density" addon not found')
             
+        row = layout.row(align = True)
+        row.operator("pg.unwrap_all", text = "", icon = "SNAP_VOLUME")
+        row.operator("pg.unwrap_selected")
+
         layout.operator("pg.reload_textures")
 
-#   Riging
+#   Rigging
        
-class VIEW3D_PT_pg_riging(Panel):
+class VIEW3D_PT_pg_rigging(Panel):
     """Creates a Panel in the scene context of the 3D view N panel"""
     
-    bl_label = "Riging"
-    bl_idname = "VIEW3D_PT_pg_riging"
+    bl_label = "Rigging"
+    bl_idname = "VIEW3D_PT_pg_rigging"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "PG_Tools"
@@ -138,7 +138,7 @@ class VIEW3D_PT_dev_panel(Panel):
 classes = (
     VIEW3D_PT_pg_modeling,
     VIEW3D_PT_pg_layout,
-    VIEW3D_PT_pg_riging,
+    VIEW3D_PT_pg_rigging,
     #VIEW3D_PT_dev_panel,
 
 )
