@@ -167,8 +167,7 @@ class PG_OT_unwrap_all(Operator):
         bpy.ops.mesh.edges_select_sharp()
         bpy.ops.mesh.mark_seam(clear=False)
 
-        #unwrap
-        unwrap(all=True)
+        pg_unwrap(all=True)
 
         bpy.ops.object.mode_set_with_submode(mode=mod)
     
@@ -194,7 +193,7 @@ class PG_OT_unwrap_selected(Operator):
         mod = context.object.mode
         bpy.ops.object.mode_set_with_submode(mode='EDIT')
         
-        unwrap()
+        pg_unwrap()
         
         bpy.ops.object.mode_set_with_submode(mode=mod)
     

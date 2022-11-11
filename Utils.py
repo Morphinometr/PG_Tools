@@ -186,7 +186,7 @@ def texture_pixel_filter(context):
     for tex in textures:
         tex.interpolation = 'Closest'
 
-def unwrap(all=False):
+def pg_unwrap(all=False):
     if all:
         bpy.ops.mesh.select_all(action = 'SELECT')
     bpy.ops.uv.unwrap(method='ANGLE_BASED', margin=0)
