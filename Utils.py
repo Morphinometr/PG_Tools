@@ -7,7 +7,6 @@ def get_addon_name(context):
     modules = context.preferences.addons.keys()
     for mod in modules:
         if 'PG_Tools' in mod:
-            print(mod)
             return mod
 
 def get_collection(name : str):
@@ -22,9 +21,7 @@ def get_layer_collection(collection_name : str):
     def recurLayerCollection(layerColl, collName):
         """Recursively transverse layer_collection for a particular name"""
         found = None
-        print(layerColl.name)
         if layerColl.name == collName:
-            print(layerColl)
             return layerColl
         
         for layer in layerColl.children:  
@@ -117,14 +114,7 @@ def move_bones_to_layer(bones, layer : int):
             if l == layer: 
                 continue
             bone.layers[l] = False
-                 
-def set_td_size(scene, x, y):
-    if addon_installed('Texel_Density'):
-        scene.td.custom_width = str(x)
-        scene.td.custom_height = str(y)
-
-
-    
+                     
 def create_mat(name):
     test_mat = bpy.data.materials.new(name)
     test_mat.use_nodes = True
@@ -190,6 +180,9 @@ def pg_unwrap(all=False):
     if all:
         bpy.ops.mesh.select_all(action = 'SELECT')
     bpy.ops.uv.unwrap(method='ANGLE_BASED', margin=0)
+    pg_set_td()
+    
+def pg_set_td():
     pg_tool = bpy.context.scene.pg_tool
     bpy.ops.pg.set_tex_density(size=pg_tool.tex_size, 
                                 tex_size_x=pg_tool.tex_size_custom_x, 

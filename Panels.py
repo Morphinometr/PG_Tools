@@ -69,7 +69,7 @@ class VIEW3D_PT_pg_modeling(Panel):
             row.prop(pg_tool, 'tex_size_custom_x', text='')
             row.prop(pg_tool, 'tex_size_custom_y', text='')
         
-        if addon_installed('Texel_Density'): 
+        if addon_installed("Texel_Density") or addon_installed("TexTools"): 
             column = layout.column(align=True)
             row = column.row(align = True)
             
@@ -79,7 +79,7 @@ class VIEW3D_PT_pg_modeling(Panel):
             if scene.pg_tool.px_density == 'custom':
                 column.prop(pg_tool, 'px_density_custom', text='')     
         else:
-            layout.label(text = '"Texel Density" addon not found')
+            layout.label(text = '"Texel Density" or "TexTools" addon not found')
             
         row = layout.row(align = True)
         row.operator("pg.unwrap_all", text = "", icon = "SNAP_VOLUME")

@@ -181,6 +181,7 @@ class PG_OT_unwrap_selected(Operator):
     
     @classmethod
     def poll(cls, context):
+        #cls.poll_message_set("HUH")
         if bpy.context.active_object is None:
             return False
         
@@ -236,7 +237,7 @@ class PG_OT_test_texture(Operator):
     bl_options = {'REGISTER', 'UNDO'}
     
     size : EnumProperty(
-        name = 'Texture Dimentions', 
+        name = 'Texture Dimensions', 
         items = [('16', '16x16', ''),
                  ('32', '32x32', ''),
                  ('64', '64x64', ''),
@@ -277,12 +278,12 @@ class PG_OT_test_texture(Operator):
     def execute(self, context):
         scene = context.scene
         pg_tool = scene.pg_tool
-         #Custom tex size!
+        # Custom tex size
         if self.size != 'custom':
             self.tex_size_x = self.tex_size_y = int(self.size)
             pg_tool.tex_size_custom_x = pg_tool.tex_size_custom_y = int(self.size)
         
-        #test texture add
+        # Add test texture
         tex_name = "Test " + str(self.tex_size_x) + 'x' + str(self.tex_size_y)
                 
         if bpy.data.images.find(tex_name) < 0:
@@ -299,7 +300,7 @@ class PG_OT_test_texture(Operator):
         bake_image_node = test_mat.node_tree.nodes["Bake"] #FIXME
         bake_image_node.image = texture
         
-        set_td_size(scene, scene.pg_tool.tex_size_custom_x, scene.pg_tool.tex_size_custom_y)
+        pg_set_td()
         
         return {'FINISHED'}
 
@@ -410,23 +411,48 @@ class PG_OT_set_tex_density(Operator):
     def execute(self, context):
         scene = context.scene
         pg_tool = scene.pg_tool
-        scene.td.units = '1'
-        scene.td.texture_size = '4'
-        scene.td.set_method = '0'
-
-         #Custom tex size!
+        
+        #Custom tex size!
         if self.size != 'custom':
             self.tex_size_x = self.tex_size_y = int(self.size)
             pg_tool.tex_size_custom_x = pg_tool.tex_size_custom_y = int(self.size)
 
-        set_td_size(scene, scene.pg_tool.tex_size_custom_x, scene.pg_tool.tex_size_custom_y)
+        if addon_installed("Texel_Density"):
+            scene.td.units = '1'
+            scene.td.texture_size = '4'
+            scene.td.set_method = '0'
 
-        if scene.pg_tool.px_density == 'custom':
-            scene.td.density_set = str(scene.pg_tool.px_density_custom)
-        else:
-            scene.td.density_set = scene.pg_tool.px_density
+            scene.td.custom_width = str(scene.pg_tool.tex_size_custom_x)
+            scene.td.custom_height = str(scene.pg_tool.tex_size_custom_y)
+
+            if scene.pg_tool.px_density == 'custom':
+                scene.td.density_set = str(scene.pg_tool.px_density_custom)
+            else:
+                scene.td.density_set = scene.pg_tool.px_density
+            
+            bpy.ops.object.texel_density_set()
         
-        bpy.ops.object.texel_density_set()
+        elif addon_installed("TexTools"):
+            sync = bpy.context.scene.tool_settings.use_uv_select_sync
+            bpy.context.scene.tool_settings.use_uv_select_sync = False
+            bpy.ops.uv.select_all(action='SELECT')
+
+            scene.texToolsSettings.size = (scene.pg_tool.tex_size_custom_x, scene.pg_tool.tex_size_custom_y)
+            if scene.pg_tool.px_density == 'custom':
+                scene.texToolsSettings.texel_density = scene.pg_tool.px_density_custom * context.scene.unit_settings.scale_length
+            else:
+                scene.texToolsSettings.texel_density = float(scene.pg_tool.px_density) * context.scene.unit_settings.scale_length
+            
+            old_type = bpy.context.area.type
+            bpy.context.area.type = "IMAGE_EDITOR"
+            bpy.ops.uv.textools_texel_density_set()
+            bpy.context.area.type = old_type
+            
+            bpy.context.scene.tool_settings.use_uv_select_sync = sync
+
+        else:
+            self.report({'ERROR'}, "There is no texel density addon.")
+            return{"CANCELLED"}
 
         return {'FINISHED'}
             
