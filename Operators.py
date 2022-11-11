@@ -1164,16 +1164,19 @@ class PG_OT_trim_timeline_to_strips(Operator):
         if self.trim_start:
             start_frame = 0
         else:
-            start_frame = context.scene.frame_start
+            start_frame = context.selected_sequences[0].frame_start
+            for strip in context.selected_sequences:
+                start_frame = min(strip.frame_start, start_frame)
         
+
         end_frame = 1
         for strip in context.selected_sequences:
             strip.frame_start = start_frame
             
             end_frame = max(strip.frame_final_duration - 1, end_frame)
             
-        context.scene.frame_start = start_frame
-        context.scene.frame_end = end_frame + start_frame
+        context.scene.frame_start = int(start_frame)
+        context.scene.frame_end = int(end_frame) + int(start_frame)
 
         return {'FINISHED'}
 
