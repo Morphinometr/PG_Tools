@@ -46,7 +46,7 @@ bl_info = {
     "category": "3D View"
     }
 
-from . import Operators, Panels
+from . import Operators, Panels, localization
 
 class PGToolsPreferences(AddonPreferences):
     bl_idname = __package__
@@ -109,12 +109,14 @@ def register():
         mod.register()
     for cls in classes:
         bpy.utils.register_class(cls)
+    bpy.app.translations.register(__name__, localization.langs)
 
 def unregister():
     for mod in modules:
         mod.unregister()
     for cls in classes:
         bpy.utils.unregister_class(cls)
+    bpy.app.translations.unregister(__name__)
 
 if __name__ == "__main__":
     register()
