@@ -674,11 +674,14 @@ class PG_OT_combine_rigs(Operator):
     # Making sure that there are 2 objects selected, one of with is active and both of them are armatures
     def poll(cls, context):
         if bpy.context.active_object is None :
+            cls.poll_message_set("There should be an active object which is an avatar rig")
             return False
         if len(context.selected_objects) != 2 :
+            cls.poll_message_set("There should be two selected objects. An avatar rig as active and a weapon rig")
             return False
         for arm in context.selected_objects:
             if arm.type != 'ARMATURE':
+                cls.poll_message_set("Selected objects should be an 'ARMATURE' type")
                 return False        
         return True
     
@@ -695,6 +698,29 @@ class PG_OT_combine_rigs(Operator):
         weapon_rig_children = weapon_rig.children
         
         move_bones_to_layer(weapon_rig.data.bones, layer = 10) 
+
+        # Pining weapon mesh to avatar rig
+        weapon_mesh = arms_mesh = None
+        for ob in weapon_rig_children:
+            if ob.type != 'MESH':
+                continue
+            if ob.name.startswith(weapon_tag): #not all weapon meshes has '_mesh' postfix
+                weapon_mesh = ob
+            if ob.name.lower() == "arms_mesh":
+                arms_mesh = ob
+        
+        if weapon_mesh is not None:
+            weapon_mesh.modifiers[0].object = avatar_rig
+            # Fixing rotation by parent armature
+            # weapon_mesh.matrix_world = weapon_mesh.matrix_world @ weapon_mesh.parent.matrix_world
+            weapon_mesh.parent = None
+
+        else:
+            self.report({'WARNING'}, "Couldn't find weapon mesh. Armature not assigned")
+        if arms_mesh is not None:
+            arms_mesh.modifiers[0].object = avatar_rig
+            # arms_mesh.matrix_world = arms_mesh.matrix_world.inverted() @ arms_mesh.parent.matrix_world
+            arms_mesh.parent = None
 
         # Joining rigs
         bpy.ops.object.join()
@@ -797,25 +823,7 @@ class PG_OT_combine_rigs(Operator):
                 self.report({'WARNING'}, "Couldn't find Avatar. Avatar bone not renamed")
 
         bpy.ops.object.mode_set_with_submode(mode='OBJECT')
-        # Pining weapon mesh to avatar rig
-        weapon_mesh = arms_mesh = None
-        for ob in weapon_rig_children:
-            if ob.type != 'MESH':
-                continue
-            if ob.name.startswith(weapon_tag): #not all weapon meshes has '_mesh' postfix
-                weapon_mesh = ob
-            if ob.name.lower() == "arms_mesh":
-                arms_mesh = ob
         
-        if weapon_mesh is not None:
-            weapon_mesh.modifiers[0].object = avatar_rig
-            # Fixing rotation by parent armature
-            weapon_mesh.matrix_world = weapon_mesh.matrix_world.inverted() @ weapon_mesh.parent.matrix_world
-        else:
-            self.report({'WARNING'}, "Couldn't find weapon mesh. Armature not assigned")
-        if arms_mesh is not None:
-            arms_mesh.modifiers[0].object = avatar_rig
-            arms_mesh.matrix_world = arms_mesh.matrix_world.inverted() @ arms_mesh.parent.matrix_world
    
         return {'FINISHED'}
 
