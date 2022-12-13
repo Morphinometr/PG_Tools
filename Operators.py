@@ -603,9 +603,9 @@ class PG_OT_fix_import(Operator):
         except:
             pass
         
-        if armature.parent == None:
-            self.report({'WARNING'}, 'Armature has no parent')
-            return {'CANCELLED'} 
+        # if armature.parent == None:
+        #     self.report({'WARNING'}, 'Armature has no parent')
+        #     return {'CANCELLED'} 
         
         if scene.pg_tool.weapon_tag == '':
             scene.pg_tool.weapon_tag = armature.name
@@ -619,7 +619,7 @@ class PG_OT_fix_import(Operator):
               
         context.view_layer.objects.active = armature  #Set armature as Active Object
         
-        #for Blender exporter 
+        #If there was two bones with the same name exporter adds " 1" to the second one witch would be tag
         if armature.data.bones.find(tag) == 0:
             armature.data.bones[tag].name += ' 1'        
 
@@ -654,12 +654,13 @@ class PG_OT_fix_import(Operator):
             collection.objects.unlink(ob)
         
         #empties.remove(parent) #remove solved empty from the list
-        
        
-       
-        # TODO: Group animation bone channels
-#        armature.animation_data.action.groups.new('1')
-#        D.objects['royal_cobra_spirit'].animation_data.action.groups['New Group'].channels.items()
+        # Group animation bone channels
+        action_name = armature.name + "_import"
+        armature.animation_data.action.name = action_name
+        bpy.data.actions[action_name].use_fake_user = True
+
+        group_fcurves(armature)
         
         return {'FINISHED'}
     
@@ -1152,6 +1153,19 @@ class PG_OT_add_space_switching(Operator):
             target.driver_remove("weight")
         constrain.targets.clear()
     
+#   Animation
+
+class PG_OT_regroup_fcurves(Operator):
+    """Re-group f-curves to groups with their bone names"""
+    bl_label = "Re-group f-curves"
+    bl_idname = "pg.trim_regroup_fcurves"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        group_fcurves(context.object)
+
+        return {"FINISHED"}
+
 #   Video Sequence Editor
 
 #   Create bone with proper scene scaling
@@ -1233,6 +1247,7 @@ classes = (
     PG_OT_add_space_switching,
     PG_OT_add_space,
     PG_OT_remove_space,
+    PG_OT_regroup_fcurves,
     PG_OT_trim_timeline_to_strips,
 
     PG_OT_test,
@@ -1247,12 +1262,14 @@ def register():
                                                             # options={'LIBRARY_EDITABLE'},
 			                                                # override={'LIBRARY_OVERRIDABLE', 'USE_INSERTION'},)
     bpy.types.SEQUENCER_MT_context_menu.append(vse_trim_menu)
+    bpy.types.DOPESHEET_MT_context_menu.append(dope_regroup_fcurves_menu)
 
 def unregister():
     del bpy.types.Scene.pg_tool
     for cls in classes:
         bpy.utils.unregister_class(cls)
     bpy.types.SEQUENCER_MT_context_menu.remove(vse_trim_menu)
+    bpy.types.SEQUENCER_MT_context_menu.remove(dope_regroup_fcurves_menu)
         
 if __name__ == "__main__":
     register()

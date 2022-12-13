@@ -244,6 +244,31 @@ def match_bone_transform(bone_pairs):
     for bone in top_level:
         recurse(bone, bone_pairs)
     
+def group_fcurves(active_armature_ob):
+    armature = active_armature_ob
+    fcurves = armature.animation_data.action.fcurves
+    groups = armature.animation_data.action.groups
+    
+    # Create animation groups
+    for bone in armature.data.bones:
+        if bone.name not in groups:
+            groups.new(bone.name)
+
+    # Assign f-curves to group
+    for fcurve in fcurves:
+        path = fcurve.data_path
+        try: 
+            bone_name = path.split('"')[1]  # 'pose.bones["FPS_PLAYER_Arm_left"].location'
+            fcurve.group = groups[bone_name]
+        except IndexError:
+            pass
+
+
+def dope_regroup_fcurves_menu(self, context):
+    layout = self.layout
+    layout.separator()
+    layout.operator("pg.trim_regroup_fcurves")
+
 def vse_trim_menu(self, context):
     layout = self.layout
     layout.separator()
