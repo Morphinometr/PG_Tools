@@ -883,7 +883,6 @@ class PG_OT_simple_controls(Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     ctrl_layer : BoolVectorProperty(name= "Layer", subtype= "LAYER", size= 32)
-    #set_wgt : BoolProperty(name = "Set Widgets", description = "Set widgets for Control Bones", default = False)
     wgt_type : EnumProperty(
             name="Assign Widgets", 
             items=[("none", "None", ""),
@@ -983,7 +982,7 @@ class PG_OT_simple_controls(Operator):
             for def_name, ctrl_name in bone_pair_names.items():
                 bone_pairs[armature_obj.pose.bones[ctrl_name]] = armature_obj.pose.bones[def_name]
             
-            # temporaly remove copy transform constraint infuence
+            # temporally remove copy transform constraint influence
             for constraint in bone_constraints.values():               
                 constraint.influence = 0
 

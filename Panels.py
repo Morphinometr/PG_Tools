@@ -7,7 +7,7 @@ from .Utils import addon_installed
 class VIEW3D_PT_pg_layout(Panel):
     """Creates a Panel in the scene context of the 3D view N panel"""
     
-    bl_label = "Setup"
+    bl_label = "Layout"
     bl_idname = "VIEW3D_PT_pg_layout"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
