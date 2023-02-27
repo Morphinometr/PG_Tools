@@ -1,5 +1,5 @@
 import bpy
-from bpy.types import Panel
+from bpy.types import Panel, Header
 from .Utils import addon_installed
 
 #   Layout
@@ -113,7 +113,18 @@ class VIEW3D_PT_pg_rigging(Panel):
             col.operator("pg.add_space_switching")
         else:
             col.operator("pg.add_space_switching", text="Edit Space Switching")
-        
+
+
+def pg_tool_header(self, context):
+    mode_string = context.mode
+    tool_settings = context.tool_settings
+    if mode_string == 'OBJECT':
+    
+
+        row = self.layout.row(align=True)
+        row.prop(tool_settings, "use_transform_data_origin", text="", icon="OBJECT_ORIGIN")
+
+
 
 #   Dev
 
@@ -127,8 +138,7 @@ class VIEW3D_PT_dev_panel(Panel):
     bl_category = "PG_Tools"
 
     def draw(self, context):
-        layout = self.layout
-        layout.operator("pg.test")
+        pass
         
 
         
@@ -146,11 +156,13 @@ classes = (
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
+    bpy.types.VIEW3D_HT_tool_header.append(pg_tool_header)
 
 
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
+    bpy.types.VIEW3D_HT_tool_header.remove(pg_tool_header)
         
 
 if __name__ == "__main__":
