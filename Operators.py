@@ -8,7 +8,7 @@ from .Utils import *
 class PG_properties(bpy.types.PropertyGroup):
     
     tex_size : EnumProperty(
-        name = 'Texture Dimentions', 
+        name = 'Texture Dimensions', 
         items = [('16', '16x16', ''),
                  ('32', '32x32', ''),
                  ('64', '64x64', ''),
@@ -51,7 +51,7 @@ class PG_bone_spaces(PropertyGroup):
 #   Modeling
 
 class PG_OT_find_instances(Operator):
-    """Detects objects that shares data mesh and assignes random object color"""
+    """Detects objects that shares data mesh and assigns random object color"""
     bl_label = "Find Instances"
     bl_idname = "pg.find_instances"
     bl_options = {'REGISTER', 'UNDO'}
@@ -461,7 +461,7 @@ class PG_OT_set_tex_density(Operator):
 
 #   Import
 class PG_OT_import_weapon(Operator):
-    """Import Weapon by its Tag"""
+    """Import Weapon by it's Tag"""
     bl_label = "Import Weapon"
     bl_idname = "pg.import_weapon"
     bl_options = {'REGISTER', 'UNDO'}
@@ -556,7 +556,7 @@ class PG_OT_import_avatar(Operator):
 
         return {'FINISHED'}
         
-#Solve some bugs of Better FBX importer
+# Solve some bugs of Better FBX importer
 class PG_OT_fix_import(Operator):
     """Fix imported Weapon Rig in active Collection"""
     bl_label = "Fix Imported Rig"
@@ -602,11 +602,7 @@ class PG_OT_fix_import(Operator):
                 armature.keyframe_delete('scale', frame=f)
         except:
             pass
-        
-        # if armature.parent == None:
-        #     self.report({'WARNING'}, 'Armature has no parent')
-        #     return {'CANCELLED'} 
-        
+                
         if scene.pg_tool.weapon_tag == '':
             scene.pg_tool.weapon_tag = armature.name
         
@@ -620,24 +616,32 @@ class PG_OT_fix_import(Operator):
         context.view_layer.objects.active = armature  #Set armature as Active Object
         
         #If there was two bones with the same name exporter adds " 1" to the second one witch would be tag
-        if armature.data.bones.find(tag) == 0:
-            armature.data.bones[tag].name += ' 1'        
+        # if armature.data.bones.find(tag) == 0:
+        #     armature.data.bones[tag].name += ' 1'        
 
         #go to Edit Mode
         mod = context.object.mode
         bpy.ops.object.mode_set_with_submode(mode='EDIT')
 
         #create a bone in the location and orientation of Armature parent
-        bpy.ops.armature.bone_primitive_add(name=tag)
-        armature.data.edit_bones[tag].matrix = armature.parent.matrix_world
-        armature.data.edit_bones[tag].length = 0.1/context.scene.unit_settings.scale_length
+        if armature.parent != None:
+            tag_bone = add_bone(armature=armature.data,
+                                name=tag,
+                                transform=armature.parent.matrix_world,
+                                length=0.1/context.scene.unit_settings.scale_length)
+    
+        #If there was two bones with the same name exporter adds " 1" to the second one witch would be tag
+        elif armature.data.bones.find(tag) == 0:
+            tag_bone = armature.data.bones[tag]
+            new_tag = tag + " 1"
+            scene.pg_tool.weapon_tag = tag_bone.name = new_tag
         
         #parent all bones without parent to newly created bone
         for name, id in armature.data.bones.items():
             if id.name == tag:
                 continue
             if id.parent == None:
-                armature.data.edit_bones[name].parent = armature.data.edit_bones[tag]
+                armature.data.edit_bones[name].parent = tag_bone
         
         #exit Edit Mode
         bpy.ops.object.mode_set_with_submode(mode=mod)
@@ -662,7 +666,7 @@ class PG_OT_fix_import(Operator):
 
         group_fcurves(armature)
         
-        # FIXME: VERY HACKY! Move to cobbine rigs and make universal
+        # FIXME: VERY HACKY! Move to combine rigs and make universal
         # Aligning weapon rig to avatar rig
         bpy.ops.object.select_all(action='DESELECT')
         armature.select_set(True)
@@ -711,7 +715,7 @@ class PG_OT_combine_rigs(Operator):
         weapon_tag = str(context.scene.pg_tool.weapon_tag)
         num = str(context.scene.pg_tool.weapon_number)
         avatar_bone = weapon_bone = inner_bone = None
-        bone_layers = [2, 6, 7, 8, 10]
+        bone_layers = [6, 7, 8, 10]
         weapon_rig_children = weapon_rig.children
         
         move_bones_to_layer(weapon_rig.data.bones, layer = 10) 
@@ -845,7 +849,7 @@ class PG_OT_combine_rigs(Operator):
         return {'FINISHED'}
 
 
-#   Riging
+#   Rigging
 
 #   Create bone with proper scene scaling
 class PG_OT_add_bone(Operator):
@@ -856,7 +860,7 @@ class PG_OT_add_bone(Operator):
 
     name : StringProperty(name="Name", default= "Bone")
     length : FloatProperty(name = 'Length', min = 0, unit= "LENGTH")
-    y_up : BoolProperty(name= "Y up ralative", default= False)
+    y_up : BoolProperty(name= "Y up relative", default= False)
 
     @classmethod
     def poll(cls, context):
@@ -899,6 +903,8 @@ class PG_OT_simple_controls(Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     ctrl_layer : BoolVectorProperty(name= "Layer", subtype= "LAYER", size= 32)
+    prefix : StringProperty(name="Prefix", default="CTRL_")
+    scale : FloatProperty(name="Scale", default=1.5, soft_min=0.1, soft_max=10)
     wgt_type : EnumProperty(
             name="Assign Widgets", 
             items=[("none", "None", ""),
@@ -927,6 +933,8 @@ class PG_OT_simple_controls(Operator):
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "ctrl_layer", text= "CTRL Bone Layer (Optional)")
+        layout.prop(self, "prefix")
+        layout.prop(self, "scale")
         
         layout.use_property_split = True
         layout.use_property_decorate = True
@@ -948,8 +956,8 @@ class PG_OT_simple_controls(Operator):
             
         #Duplicate selected bones
         for bone in def_bones:
-            ctrl_name = 'CTRL_' + bone.name
-            ctrl_bone = add_bone(armature, ctrl_name, bone.matrix, bone.length * 1.5)
+            ctrl_name = self.prefix + bone.name
+            ctrl_bone = add_bone(armature, ctrl_name, bone.matrix, bone.length * self.scale)
             ctrl_bone.use_deform = False
             
             #deselect old bones

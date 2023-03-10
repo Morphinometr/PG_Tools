@@ -43,6 +43,9 @@ def get_widget(type: str, size : float):
     widget = get_obj(widget_name)
     if widget is None:
         widget = creation_func[type](widget_name, size)
+        widgets_col = get_collection("Widgets")
+        bpy.context.collection.objects.unlink(widget)
+        widgets_col.objects.link(widget)
     return widget
 
 def create_wgt_cube(name : str, size : float = 1.0):
