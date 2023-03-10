@@ -138,7 +138,9 @@ class VIEW3D_PT_dev_panel(Panel):
     bl_category = "PG_Tools"
 
     def draw(self, context):
-        pass
+        layout = self.layout
+        col = layout.column(align=False)
+        col.label(text="Dev")
         
 
         

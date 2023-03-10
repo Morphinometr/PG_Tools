@@ -20,6 +20,17 @@
 
 # Contributed to by meta-androcto, pitiwazou, chromoly, italic, morphin
 
+if "bpy" in locals():
+    import importlib
+    importlib.reload(Operators)
+    importlib.reload(Panels)
+    importlib.reload(localization)
+
+else:
+    from . import Operators
+    from . import Panels
+    from . import localization
+
 import bpy
 import os
 from bpy.props import (
@@ -45,8 +56,6 @@ bl_info = {
     "doc_url": "https://github.com/Morphinometr/Pixel_Tools",
     "category": "3D View"
     }
-
-from . import Operators, Panels, localization
 
 class PGToolsPreferences(AddonPreferences):
     bl_idname = __package__
