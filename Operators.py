@@ -662,6 +662,22 @@ class PG_OT_fix_import(Operator):
 
         group_fcurves(armature)
         
+        # FIXME: VERY HACKY! Move to cobbine rigs and make universal
+        # Aligning weapon rig to avatar rig
+        bpy.ops.object.select_all(action='DESELECT')
+        armature.select_set(True)
+        context.scene.tool_settings.use_transform_data_origin = True
+        bpy.ops.transform.rotate(value=1.5708, orient_axis='X', constraint_axis=(True, False, False))
+        context.scene.tool_settings.use_transform_data_origin = False
+        
+        # fixing meshes orientation
+        for ob in meshes:
+            ob.matrix_parent_inverse = Matrix(((1.0, 0.0, 0.0, 0.0),
+                                               (0.0, 0.0, 1.0, 0.0),
+                                               (0.0, -1.0, 0.0, 0.0),
+                                               (-0.0, 0.0, -0.0, 1.0)))
+            
+        
         return {'FINISHED'}
     
 #   Combine rigs for presentation 
@@ -721,7 +737,7 @@ class PG_OT_combine_rigs(Operator):
         if arms_mesh is not None:
             arms_mesh.modifiers[0].object = avatar_rig
             # arms_mesh.matrix_world = arms_mesh.matrix_world.inverted() @ arms_mesh.parent.matrix_world
-            arms_mesh.parent = None
+            # arms_mesh.parent = None
 
         # Joining rigs
         bpy.ops.object.join()
