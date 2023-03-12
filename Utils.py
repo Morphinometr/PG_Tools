@@ -3,16 +3,16 @@ import random
 from mathutils import Matrix, Vector
 from bpy.types import Armature
 
-def get_addon_name(context):
+def get_addon_fullname(context, name : str) -> str:
     modules = context.preferences.addons.keys()
     for mod in modules:
-        if 'PG_Tools' in mod:
+        if name in mod:
             return mod
 
 def get_collection(name : str):
     try: 
         collection = bpy.data.collections[name]
-    except Exception:
+    except KeyError:
         collection = bpy.data.collections.new(name)
         bpy.context.scene.collection.children.link(collection)
     return collection
@@ -37,6 +37,8 @@ def get_obj(name : str):
             return ob
     return None
 
+from .widgets import *
+
 def get_widget(type: str, size : float):
     widget_name = "WGT_" + type.capitalize() + "_1m"
     creation_func = {"cube" : create_wgt_cube, "sphere" : create_wgt_sphere, "circle" : create_wgt_circle, "square" : create_wgt_square}
@@ -44,63 +46,8 @@ def get_widget(type: str, size : float):
     if widget is None:
         widget = creation_func[type](widget_name, size)
         widgets_col = get_collection("Widgets")
-        bpy.context.collection.objects.unlink(widget)
         widgets_col.objects.link(widget)
     return widget
-
-def create_wgt_cube(name : str, size : float = 1.0):
-    bpy.ops.object.mode_set_with_submode(mode='OBJECT')
-    _size = size 
-
-    bpy.ops.mesh.primitive_cube_add(size=_size, enter_editmode=False, align='WORLD', location=(0, 0, 0), scale=(1, 1, 1))
-    wgt = bpy.context.object
-    wgt.name = name
-    bpy.ops.object.mode_set_with_submode(mode='EDIT')
-    bpy.ops.mesh.delete(type='ONLY_FACE')
-    bpy.ops.object.mode_set_with_submode(mode='OBJECT')
-    return wgt
-
-def create_wgt_sphere(name : str, size : float = 1.0):
-    bpy.ops.object.mode_set_with_submode(mode='OBJECT')
-    _size = size / 2 
-
-    bpy.ops.mesh.primitive_circle_add(vertices=32, radius=_size, calc_uvs=False, enter_editmode=False, align='WORLD', location=(0, 0, 0), scale=(1, 1, 1))
-    wgt = bpy.context.object
-    wgt.name = name
-    bpy.ops.object.mode_set_with_submode(mode='EDIT')
-    bpy.ops.mesh.duplicate()
-    bpy.ops.transform.rotate(value=1.5708, orient_axis="X", orient_type="GLOBAL", use_proportional_edit=False)
-    bpy.ops.mesh.duplicate()
-    bpy.ops.transform.rotate(value=1.5708, orient_axis="Z", orient_type="GLOBAL", use_proportional_edit=False)
-    bpy.ops.object.mode_set_with_submode(mode='OBJECT')
-    return wgt
-
-def create_wgt_circle(name : str, size : float = 1.0):
-    bpy.ops.object.mode_set_with_submode(mode='OBJECT')
-    _size = size / 2
-
-    bpy.ops.mesh.primitive_circle_add(vertices=32, radius=_size, calc_uvs=False, enter_editmode=False, align='WORLD', location=(0, 0, 0), scale=(1, 1, 1))
-    wgt = bpy.context.object
-    wgt.name = name
-    bpy.ops.object.mode_set_with_submode(mode='EDIT')
-    bpy.ops.transform.rotate(value=1.5708, orient_axis="X", orient_type="GLOBAL", use_proportional_edit=False)
-    bpy.ops.object.mode_set_with_submode(mode='OBJECT')
-    return wgt
-
-def create_wgt_square(name : str, size : float = 1.0):
-    bpy.ops.object.mode_set_with_submode(mode='OBJECT')
-    _size = size 
-
-    bpy.ops.mesh.primitive_plane_add(size=_size, calc_uvs=False, enter_editmode=False, align='WORLD', location=(0, 0, 0), scale=(1, 1, 1))
-    wgt = bpy.context.object
-    wgt.name = name
-    bpy.ops.object.mode_set_with_submode(mode='EDIT')
-    bpy.ops.transform.rotate(value=1.5708, orient_axis="X", orient_type="GLOBAL", use_proportional_edit=False)
-    bpy.ops.mesh.delete(type='ONLY_FACE')
-    bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.mesh.bevel(offset=_size * 0.125, offset_pct=0, segments=7, affect='VERTICES')
-    bpy.ops.object.mode_set_with_submode(mode='OBJECT')
-    return wgt
 
 def add_bone(armature : Armature, name : str, transform : Matrix, length : float):
     bone = armature.edit_bones.new(name)
@@ -108,6 +55,7 @@ def add_bone(armature : Armature, name : str, transform : Matrix, length : float
     bone.tail = bone.head + vec * length
     bone.matrix = transform.copy()
     bone.select = bone.select_head = bone.select_tail = True
+    armature.edit_bones.active = bone
     return bone
 
 def move_bones_to_layer(bones, layer : int):

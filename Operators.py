@@ -484,7 +484,7 @@ class PG_OT_import_weapon(Operator):
         layer_collection = get_layer_collection(collection.name)
         bpy.context.view_layer.active_layer_collection = layer_collection
         
-        addon = context.preferences.addons[get_addon_name(context)]
+        addon = context.preferences.addons[get_addon_fullname(context, "PG_Tools")]
         
         project_path = addon.preferences['project_filepath']
         weapon_path = project_path + "\\Assets\\Sources\\Models\\Weapons\\" + self.weapon_tag + "\\" + self.weapon_tag + ".fbx"
@@ -532,7 +532,7 @@ class PG_OT_import_avatar(Operator):
         layer_collection = get_layer_collection(collection.name)
         bpy.context.view_layer.active_layer_collection = layer_collection
         
-        addon = context.preferences.addons[get_addon_name(context)]
+        addon = context.preferences.addons[get_addon_fullname(context, "PG_Tools")]
         
         project_path = addon.preferences['project_filepath']
         weapon_path = project_path + "\\Assets\\Sources\\battle_royale\\Models\\" + self.avatar_tag + ".fbx"
