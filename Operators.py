@@ -1068,8 +1068,6 @@ class PG_OT_add_space_switching(Operator):
     def invoke(self, context, event):
         if not context.active_pose_bone.spaces:
             bpy.ops.pg.add_space()
-            bpy.ops.pg.add_space()
-
         return context.window_manager.invoke_props_dialog(self)
 
     def draw(self, context):
