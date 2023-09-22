@@ -563,6 +563,10 @@ class PG_OT_fix_import(Operator):
     bl_idname = "pg.fix_import"
     bl_options = {'REGISTER', 'UNDO'}
     
+    merge_empties : BoolProperty(name="Merge Empties", 
+                                 description="Merge imported Empty objects with imported Armature as new bones in corresponding locations. Good for 'Points'",
+                                 default=False)
+    
 #    @classmethod
 #    def poll(cls, context):
 #        if bpy.context.active_object is None:
@@ -599,6 +603,7 @@ class PG_OT_fix_import(Operator):
             for f in range(int(armature.animation_data.action.frame_range[0]), int(armature.animation_data.action.frame_range[1]+1)):
                 armature.keyframe_delete('location', frame=f)
                 armature.keyframe_delete('rotation_quaternion', frame=f)
+                armature.keyframe_delete('rotation_euler', frame=f)
                 armature.keyframe_delete('scale', frame=f)
         except:
             pass
@@ -621,6 +626,7 @@ class PG_OT_fix_import(Operator):
 
         #go to Edit Mode
         mod = context.object.mode
+        armature.data.pose_position = 'REST' #FIXME: find universal matrix transformation for creation empties that parented to bones in pose position
         bpy.ops.object.mode_set_with_submode(mode='EDIT')
 
         #create a bone in the location and orientation of Armature parent
@@ -643,6 +649,21 @@ class PG_OT_fix_import(Operator):
             if id.parent == None:
                 armature.data.edit_bones[name].parent = tag_bone
         
+        #merge imported empties
+        if self.merge_empties:
+            for empty in empties:
+                if empty.parent == None:
+                    print('no parent')
+                    continue
+                
+                print(empty.name + ' processing')
+                new_bone = add_bone(armature=armature.data, name=empty.name, transform=armature.matrix_world.inverted() @ empty.matrix_world, length=0.1/context.scene.unit_settings.scale_length)
+                print('added ' + new_bone.name)
+                new_bone.parent = armature.data.edit_bones[empty.parent_bone]
+                print('parent ' + new_bone.parent.name)
+        
+        armature.data.pose_position = 'POSE'
+
         #exit Edit Mode
         bpy.ops.object.mode_set_with_submode(mode=mod)
 
