@@ -310,6 +310,8 @@ class PG_OT_texture_pixel_filter(Operator):
     bl_idname = "pg.texture_pixel_filter"
     bl_options = {'REGISTER', 'UNDO'}
     
+    fix_materials : BoolProperty(name = "Flatten materials", description = "set 0 in metalness, specular, emission properties in imported materials", default = True)
+    
     @classmethod
     def poll(cls, context):
         if bpy.context.active_object is None and len(context.selected_objects) < 1:
@@ -318,7 +320,8 @@ class PG_OT_texture_pixel_filter(Operator):
             
     def execute(self, context):
         texture_pixel_filter(context)
-        
+        if self.fix_materials:
+            flatten_materials(context)
         return {'FINISHED'}
  
 class PG_OT_reload_textures(Operator):
