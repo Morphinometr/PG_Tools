@@ -3,46 +3,6 @@ from bpy.types import Operator, PropertyGroup
 from bpy.props import EnumProperty, BoolProperty, IntProperty, FloatProperty, StringProperty, BoolVectorProperty
 from .Utils import *
 
-#   Custom properties
-
-class PG_properties(bpy.types.PropertyGroup):
-    
-    tex_size : EnumProperty(
-        name = 'Texture Dimensions', 
-        items = [('16', '16x16', ''),
-                 ('32', '32x32', ''),
-                 ('64', '64x64', ''),
-                 ('128', '128x128', ''),
-                 ('256', '256x256', ''),
-                 ('512', '512x512', ''),
-                 ('1024', '1024x1024', ''),
-                 ('2048', '2048x2048', ''),
-                 ('4096', '4096x4096', ''),
-                 ('custom', 'Custom', '')
-                ],
-        default = '64'
-        )
-    
-    px_density : EnumProperty(
-        name = 'Pixel Density',
-        items = [('10', '10 px/m', ''),
-                 ('16', '16 px/m', ''),
-                 ('32', '32 px/m', ''),
-                 ('1000', '1000 px/m', ''),
-                 ('custom', 'Custom', ''),
-                ],
-        default = '16'
-        )
-        
-    px_density_custom : FloatProperty(name="Custom Pixel Density", min = 0 )
-    tex_size_custom_y : IntProperty(name="Custom texture size Y", min = 1, default = 64 )
-    tex_size_custom_x : IntProperty(name="Custom texture size X", min = 1, default = 64 )
-    reset_colors : BoolProperty(name="Reset Colors", default = False)
-    
-    weapon_tag : StringProperty(name="Weapon Tag", default = "")
-    weapon_number : StringProperty(name="Weapon Number", default = "")
-    avatar_tag : StringProperty(name="Avatar Tag", default = "")
-    
 class PG_bone_spaces(PropertyGroup):
     armature : StringProperty(name= "Armature")#, override={"LIBRARY_OVERRIDABLE"})
     bone : StringProperty(name= "Bone")#, override={"LIBRARY_OVERRIDABLE"})
@@ -1271,7 +1231,6 @@ class PG_OT_test(Operator):
 #   Registration
 
 classes = (
-    PG_properties,
     PG_bone_spaces,
     PG_OT_find_instances,
     PG_OT_reset_ob_colors,
@@ -1302,7 +1261,6 @@ classes = (
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-    bpy.types.Scene.pg_tool = bpy.props.PointerProperty(type = PG_properties)
     bpy.types.PoseBone.spaces = bpy.props.CollectionProperty(type = PG_bone_spaces) #, 
                                                             # options={'LIBRARY_EDITABLE'},
 			                                                # override={'LIBRARY_OVERRIDABLE', 'USE_INSERTION'},)
@@ -1310,7 +1268,6 @@ def register():
     bpy.types.DOPESHEET_MT_context_menu.append(dope_regroup_fcurves_menu)
 
 def unregister():
-    del bpy.types.Scene.pg_tool
     for cls in classes:
         bpy.utils.unregister_class(cls)
     bpy.types.SEQUENCER_MT_context_menu.remove(vse_trim_menu)

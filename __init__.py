@@ -25,11 +25,15 @@ if "bpy" in locals():
     importlib.reload(Operators)
     importlib.reload(Panels)
     importlib.reload(localization)
+    importlib.reload(animation_tools)
+    importlib.reload(properties)
 
 else:
     from . import Operators
     from . import Panels
     from . import localization
+    from . import animation_tools
+    from . import properties
 
 import bpy
 import os
@@ -104,6 +108,8 @@ class OBJECT_OT_pg_tools_prefs(Operator):
 modules = (
     Operators,
     Panels,
+    animation_tools,
+    properties,
 
 )
 
