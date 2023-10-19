@@ -940,7 +940,11 @@ class PG_OT_simple_controls(Operator):
             
         #Duplicate selected bones
         for bone in def_bones:
-            ctrl_name = self.prefix + bone.name
+            if bone.name.startswith("MCH_"):
+                ctrl_name = self.prefix + bone.name[4:]
+            else:
+                ctrl_name = self.prefix + bone.name
+            
             ctrl_bone = add_bone(armature, ctrl_name, bone.matrix, bone.length * self.scale)
             ctrl_bone.use_deform = False
             
