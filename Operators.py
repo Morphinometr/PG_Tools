@@ -600,10 +600,11 @@ class PG_OT_fix_import(Operator):
                                 length=0.1/context.scene.unit_settings.scale_length)
     
         #If there was two bones with the same name exporter adds " 1" to the second one witch would be tag
-        elif armature.data.bones.find(tag) == 0:
-            tag_bone = armature.data.bones[tag]
-            new_tag = tag + " 1"
-            scene.pg_tool.weapon_tag = tag_bone.name = new_tag
+        #upd: not always. it's better to handle manually
+        # elif armature.data.bones.find(tag) == 0:
+        #     tag_bone = armature.data.bones[tag]
+        #     new_tag = tag + " 1"
+        #     scene.pg_tool.weapon_tag = tag_bone.name = new_tag
         
         #parent all bones without parent to newly created bone
         for name, id in armature.data.bones.items():
