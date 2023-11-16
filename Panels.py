@@ -13,6 +13,9 @@ class VIEW3D_PT_pg_layout(Panel):
     bl_region_type = 'UI'
     bl_category = "PG_Tools"
     
+    @classmethod
+    def poll(cls, context):
+        return context.mode == 'OBJECT'
     
     def draw(self, context):
         layout = self.layout
@@ -45,6 +48,12 @@ class VIEW3D_PT_pg_modeling(Panel):
     bl_region_type = 'UI'
     bl_category = "PG_Tools"
     
+    @classmethod
+    def poll(cls, context):
+        if context.object.type == 'ARMATURE':
+            if context.mode == 'POSE' or context.mode == 'EDIT_ARMATURE':
+                return False
+        return True
     
     def draw(self, context):
         layout = self.layout
@@ -98,6 +107,13 @@ class VIEW3D_PT_pg_rigging(Panel):
     bl_region_type = 'UI'
     bl_category = "PG_Tools"
     
+    @classmethod
+    def poll(cls, context):
+        if context.object is None or context.object.type != 'ARMATURE':
+            return False
+        if context.mode == 'OBJECT':
+            return False
+        return True
     
     def draw(self, context):
         layout = self.layout
