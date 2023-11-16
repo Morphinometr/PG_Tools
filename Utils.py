@@ -70,11 +70,12 @@ def create_mat(name):
     test_mat = bpy.data.materials.new(name)
     test_mat.use_nodes = True
     test_mat.use_fake_user = True
-    test_mat.node_tree.nodes["Principled BSDF"].inputs[5].default_value = 0
+    principled_node = test_mat.node_tree.nodes.get('Principled BSDF')
+    principled_node.inputs[12].default_value = 0 # specular
 
     #test texture
-    principled_node = test_mat.node_tree.nodes.get('Principled BSDF')
     test_image_node = test_mat.node_tree.nodes.new("ShaderNodeTexImage")
+    print('test tex')
     test_image_node.location = (-350, 200)
         
     link  = test_mat.node_tree.links.new

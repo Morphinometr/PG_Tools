@@ -166,30 +166,30 @@ class PG_OT_test_material(Operator):
     bl_idname = "pg.test_material"
     bl_options = {'REGISTER', 'UNDO'}
     
+    new : BoolProperty(name="New Instance", default=False, description="Create new test material instance instead of using existing one")
+    
     @classmethod
     def poll(cls, context):
-        if bpy.context.active_object is None:
+        if context.area.type != 'VIEW_3D':
             return False
         
-        return (context.area.type == 'VIEW_3D' and
-                context.active_object.type == 'MESH' and 
-                context.active_object.select_get()
-                )
-            
-    def execute(self, context):
-                
-        if bpy.data.materials.find("Test Material") < 0:
-            #create test material
+        for ob in context.selected_objects:
+            if ob.type == 'MESH':
+                return True
+        
+    def execute(self, context): 
+        if bpy.data.materials.find("Test Material") < 0 or self.new:
             test_mat = create_mat("Test Material")
         else: test_mat = bpy.data.materials.get("Test Material")
-        
-            
+        test_mat["mat_id"] = "test_material"
+
         #append to selected objects
         for ob in bpy.context.selected_objects :
             ob.active_material = test_mat
                    
         return {'FINISHED'}
-    
+
+
 class PG_OT_test_texture(Operator):
     """Add test texture"""
     bl_label = "Set Texture"
@@ -214,6 +214,7 @@ class PG_OT_test_texture(Operator):
         
     tex_size_x : IntProperty(name="Custom texture size X", min = 1, default = 64 )
     tex_size_y : IntProperty(name="Custom texture size Y", min = 1, default = 64 )
+    set_td : BoolProperty(name="Set texel Density", default=True)
     
     @classmethod
     def poll(cls, context):
@@ -225,7 +226,6 @@ class PG_OT_test_texture(Operator):
         
         return context.area.type == 'VIEW_3D' and context.active_object.type == 'MESH' and context.active_object.select_get()
             
-    
     def invoke(self, context, event):
         scene = context.scene
         pg_tool = scene.pg_tool
@@ -250,6 +250,9 @@ class PG_OT_test_texture(Operator):
             texture = bpy.ops.image.new(name= tex_name, width=self.tex_size_x, height=self.tex_size_y, generated_type='COLOR_GRID')
         
         test_mat = bpy.data.materials["Test Material"]
+        if context.object.active_material.get('mat_id') and context.object.active_material['mat_id'] == "test_material":
+            test_mat = context.object.active_material
+        
         test_image_node = test_mat.node_tree.nodes["Image Texture"] #FIXME: take texture in 'base color' node
         test_image_node.image = bpy.data.images[tex_name]
         
@@ -260,7 +263,12 @@ class PG_OT_test_texture(Operator):
         bake_image_node = test_mat.node_tree.nodes["Bake"] #FIXME
         bake_image_node.image = texture
         
-        pg_set_td()
+        if self.set_td:
+            mod = context.object.mode
+            bpy.ops.object.mode_set_with_submode(mode='EDIT')
+            bpy.ops.object.material_slot_select()
+            pg_set_td()
+            bpy.ops.object.mode_set_with_submode(mode=mod)
         
         return {'FINISHED'}
 
