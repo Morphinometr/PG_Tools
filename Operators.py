@@ -181,9 +181,8 @@ class PG_OT_test_material(Operator):
         if bpy.data.materials.find("Test Material") < 0 or self.new:
             test_mat = create_mat("Test Material")
         else: test_mat = bpy.data.materials.get("Test Material")
-        test_mat["mat_id"] = "test_material"
 
-        #append to selected objects
+        #assign to selected objects
         for ob in bpy.context.selected_objects :
             ob.active_material = test_mat
                    
@@ -250,10 +249,10 @@ class PG_OT_test_texture(Operator):
             texture = bpy.ops.image.new(name= tex_name, width=self.tex_size_x, height=self.tex_size_y, generated_type='COLOR_GRID')
         
         test_mat = bpy.data.materials["Test Material"]
-        if context.object.active_material.get('mat_id') and context.object.active_material['mat_id'] == "test_material":
+        if context.object.active_material != None and context.object.active_material.name.startswith("Test Material"):
             test_mat = context.object.active_material
         
-        test_image_node = test_mat.node_tree.nodes["Image Texture"] #FIXME: take texture in 'base color' node
+        test_image_node = test_mat.node_tree.nodes['Principled BSDF'].inputs['Base Color'].links[0].from_node
         test_image_node.image = bpy.data.images[tex_name]
         
         #bake texture add
@@ -266,6 +265,7 @@ class PG_OT_test_texture(Operator):
         if self.set_td:
             mod = context.object.mode
             bpy.ops.object.mode_set_with_submode(mode='EDIT')
+            bpy.ops.mesh.select_all(action='DESELECT')
             bpy.ops.object.material_slot_select()
             pg_set_td()
             bpy.ops.object.mode_set_with_submode(mode=mod)
