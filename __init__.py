@@ -52,8 +52,8 @@ from bpy.types import (
 bl_info = {
     "name": "PG Tools",
     "author": "Kharkovschenko Konstantin",
-    "version": (0, 2, 4),
-    "blender": (2, 80, 0),
+    "version": (0, 3, 0),
+    "blender": (4, 0, 0),
     "description": "PixelGun pipeline tools",
     "location": "Addons Preferences",
     "warning": "",
@@ -69,21 +69,9 @@ class PGToolsPreferences(AddonPreferences):
         subtype='FILE_PATH',
     )
 
-    # number: IntProperty(
-    #     name="Example Number",
-    #     default=4,
-    # )
-    # boolean: BoolProperty(
-    #     name="Example Boolean",
-    #     default=False,
-    # )
-
     def draw(self, context):
         layout = self.layout
-        #layout.label(text="This is a preferences view for our add-on")
         layout.prop(self, "project_filepath")
-        # layout.prop(self, "number")
-        # layout.prop(self, "boolean")
 
 
 class OBJECT_OT_pg_tools_prefs(Operator):
@@ -96,8 +84,6 @@ class OBJECT_OT_pg_tools_prefs(Operator):
         preferences = context.preferences
         addon_prefs = preferences.addons[__name__].preferences
 
-        # info = ("Path: %s, Number: %d, Boolean %r" %
-        #         (addon_prefs.filepath, addon_prefs.number, addon_prefs.boolean))
         info = ("Path: %s" % addon_prefs.project_filepath)
 
         self.report({'INFO'}, info)

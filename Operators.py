@@ -895,7 +895,7 @@ class PG_OT_simple_controls(Operator):
     bl_idname = "pg.create_simple_controls"
     bl_options = {'REGISTER', 'UNDO'}
 
-    ctrl_layer : BoolVectorProperty(name= "Layer", subtype= "LAYER", size= 32)
+    # ctrl_layer : BoolVectorProperty(name= "Layer", subtype= "LAYER", size= 32)
     prefix : StringProperty(name="Prefix", default="CTRL_")
     scale : FloatProperty(name="Scale", default=1.5, soft_min=0.1, soft_max=10)
     wgt_type : EnumProperty(
@@ -906,7 +906,7 @@ class PG_OT_simple_controls(Operator):
                    ("square", "Square", ""), 
                    ("circle", "Circle", "")], 
             default="none")
-    wgt_size : FloatProperty(name= "Widget Size", min= 0, soft_max= 1000, default= 1, unit= "LENGTH")
+    wgt_size : FloatProperty(name= "Widget Size", min= 0, soft_max= 1000, default= 0.5, unit= "LENGTH")
     match_transform : BoolProperty(name = "Match Transform", description = "Move Control bones to Deformation bones in World Space", default = True )
     
     # TODO:
@@ -962,22 +962,13 @@ class PG_OT_simple_controls(Operator):
             
             bone_pair_names[bone.name] = ctrl_bone.name  #Solves issue if name already existed
     
-        for bone in context.selected_bones:
-            bone.layers = self.ctrl_layer
+        # for bone in context.selected_bones: #FIXME Blender doesn't have bone layers
+        #     bone.layers = self.ctrl_layer
 
         # Relations
         for bone in def_bones:
             if bone.parent in def_bones:
                 armature.edit_bones[bone_pair_names[bone.name]].parent = armature.edit_bones[bone_pair_names[bone.parent.name]]
-                
-        
-        # Constraints and widgets        
-        bpy.ops.object.mode_set_with_submode(mode='OBJECT')
-        if self.wgt_type != "none":
-            widget = get_widget(self.wgt_type, 1 / context.scene.unit_settings.scale_length)
-        
-        # reset active object after widget creation
-        context.view_layer.objects.active = armature_obj
                    
         bpy.ops.object.mode_set_with_submode(mode='POSE')
         wgt_sc = self.wgt_size * context.scene.unit_settings.scale_length
@@ -990,9 +981,8 @@ class PG_OT_simple_controls(Operator):
             bone_constraints[bone].target = armature_obj
             bone_constraints[bone].subtarget = ctrl
             
-
-
             if self.wgt_type != "none":
+                widget = get_widget(self.wgt_type, 1 / context.scene.unit_settings.scale_length)
                 armature_obj.pose.bones[ctrl].custom_shape = widget
                 armature_obj.pose.bones[ctrl].use_custom_shape_bone_size = False
                 armature_obj.pose.bones[ctrl].custom_shape_scale_xyz = wgt_scale

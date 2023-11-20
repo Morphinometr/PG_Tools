@@ -50,7 +50,7 @@ class VIEW3D_PT_pg_modeling(Panel):
     
     @classmethod
     def poll(cls, context):
-        if context.object.type == 'ARMATURE':
+        if context.object and context.object.type == 'ARMATURE':
             if context.mode == 'POSE' or context.mode == 'EDIT_ARMATURE':
                 return False
         return True
