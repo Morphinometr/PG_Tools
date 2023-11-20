@@ -128,6 +128,10 @@ class PG_OT_unwrap_all(Operator):
         bpy.ops.mesh.mark_seam(clear=False)
 
         pg_unwrap(all=True)
+        bpy.ops.uv.pack_islands(scale=False,
+                                rotate_method='CARDINAL',
+                                margin_method='FRACTION',
+                                margin=1/int(context.scene.pg_tool.tex_size))
 
         bpy.ops.object.mode_set_with_submode(mode=mod)
     

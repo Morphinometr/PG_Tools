@@ -122,8 +122,8 @@ def texture_pixel_filter(context):
     textures = get_textures(materials)
 
     for mat in materials:
-        mat.node_tree.nodes["Principled BSDF"].inputs[6].default_value = 0 # 6 - Metallic 
-
+        mat.node_tree.nodes["Principled BSDF"].inputs['Metallic'].default_value = 0
+    
     for tex in textures:
         tex.interpolation = 'Closest'
 
@@ -144,8 +144,11 @@ def pg_set_td():
 def flatten_materials(context):
     materials = get_materials(context)
     for mat in materials:
-        for i in (6,7,20): # 6 - Metallic, 7 - Specular, 20 - Emission
-            mat.node_tree.nodes["Principled BSDF"].inputs[i].default_value = 0
+        shader = mat.node_tree.nodes["Principled BSDF"]
+        for i in ('Metallic', 'Specular IOR Level', 'Emission Strength'):
+            shader.inputs[i].default_value = 0
+        
+        
 
 def random_color(steps, alpha=1):
     return (randvalue(steps),randvalue(steps),randvalue(steps),alpha)
