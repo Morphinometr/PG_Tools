@@ -715,7 +715,11 @@ class PG_OT_combine_rigs(Operator):
         bone_layers = [6, 7, 8, 10]
         weapon_rig_children = weapon_rig.children
         
-        move_bones_to_layer(weapon_rig.data.bones, layer = 10) 
+        # move_bones_to_layer(weapon_rig.data.bones, layer = 10) #FIXME
+        weap_bone_col = "Weapon deform"
+        weapon_rig.data.collections.new(weap_bone_col)
+        for bone in weapon_rig.data.bones.values():
+            weapon_rig.data.collections[weap_bone_col].assign(bone)
 
         # Pining weapon mesh to avatar rig
         weapon_mesh = arms_mesh = None
@@ -758,8 +762,8 @@ class PG_OT_combine_rigs(Operator):
         for bone in avatar_rig.pose.bones:
             bone.bone.select = False
             
-        for layer in bone_layers:
-            bpy.data.armatures[avatar_rig.data.name].layers[layer] = True
+        # for layer in bone_layers:
+        #     bpy.data.armatures[avatar_rig.data.name].layers[layer] = True
         
         #TODO: Make rotations via transform matrix
         if addon_installed('space_view3d_copy_attributes'):
