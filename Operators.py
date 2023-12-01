@@ -928,7 +928,7 @@ class PG_OT_simple_controls(Operator):
         return True
 
     def invoke(self, context, event):
-        self.wgt_size = 1 / context.scene.unit_settings.scale_length
+        self.wgt_size = 0.5 / context.scene.unit_settings.scale_length
         return context.window_manager.invoke_props_dialog(self)
     
     def draw(self, context):
