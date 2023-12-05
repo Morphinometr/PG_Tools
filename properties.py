@@ -4,7 +4,7 @@ from bpy.props import EnumProperty, BoolProperty, IntProperty, FloatProperty, St
 
 #   Custom properties
 
-class PG_properties(bpy.types.PropertyGroup):
+class PG_properties(PropertyGroup):
     
     tex_size : EnumProperty(
         name = 'Texture Dimensions', 
@@ -42,20 +42,8 @@ class PG_properties(bpy.types.PropertyGroup):
     weapon_number : StringProperty(name="Weapon Number", default = "")
     avatar_tag : StringProperty(name="Avatar Tag", default = "")
 
-    noise_mode: EnumProperty(
-        items=(
-            ("LOCATION", "Location", ""),
-            ("ROTATION", "Rotation", ""),
-            ("SCALE", "Scale", "")
-        ),
-        name="Noise Mode",
-        description="F-Curve type to be affected. Usually it will be different values for Location, Rotation and scale Noise",
-        default="LOCATION"
-    )
-    noise_scale_mid: FloatProperty(name="Scale mid", description="Midpoint of the noise 'Scale' random value", default=1.0)
-    noise_scale_range: FloatProperty(name="Scale range", description="Plus minus range of the 'Scale' random value", default=2.0)
-    noise_strength_mid: FloatProperty(name="Strength mid", description="Midpoint of the noise 'Strength' random value", default=1.0)
-    noise_strength_range: FloatProperty(name="Strength range", description="Plus minus range of the 'Strength' random value", default=2.0)
+    
+    
     
 classes = (
     PG_properties,
