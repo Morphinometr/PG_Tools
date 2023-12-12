@@ -759,6 +759,7 @@ class PG_OT_combine_rigs(Operator):
                 avatar_arm_L = bone
               
         bpy.ops.object.mode_set_with_submode(mode='POSE')
+        avatar_rig.pose_position = 'POSE'
         for bone in avatar_rig.pose.bones:
             bone.bone.select = False
             
