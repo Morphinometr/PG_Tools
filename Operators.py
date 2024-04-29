@@ -629,14 +629,15 @@ class PG_OT_fix_import(Operator):
         if self.merge_empties:
             for empty in empties:
                 if empty.parent == None:
-                    print('no parent')
+                    #print('no parent')
                     continue
                 
-                print(empty.name + ' processing')
-                new_bone = add_bone(armature=armature.data, name=empty.name, transform=armature.matrix_world.inverted() @ empty.matrix_world, length=0.1/context.scene.unit_settings.scale_length)
-                print('added ' + new_bone.name)
+                new_bone = add_bone(armature=armature.data, 
+                                    name=empty.name, 
+                                    transform=armature.matrix_world.inverted() @ empty.matrix_world, 
+                                    length=0.1/context.scene.unit_settings.scale_length)
+
                 new_bone.parent = armature.data.edit_bones[empty.parent_bone]
-                print('parent ' + new_bone.parent.name)
         
         armature.data.pose_position = 'POSE'
 

@@ -23,7 +23,7 @@ better_import = {
         "use_edge_crease" : True,
         "my_edge_crease_scale" : 1.0,
         "my_edge_smoothing" : 'FBXSDK',
-        "use_detect_deform_bone" : True,
+        "use_detect_deform_bone" : False,
         "use_import_materials" : True,
         "use_rename_by_filename" : False,
         "my_rotation_mode" : 'QUATERNION',
