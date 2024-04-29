@@ -409,6 +409,11 @@ class PG_OT_set_tex_density(Operator):
         
         elif addon_installed("TexTools"):
             sync = bpy.context.scene.tool_settings.use_uv_select_sync
+            mod = context.object.mode
+            bpy.ops.object.mode_set_with_submode(mode='EDIT')
+            
+            old_type = bpy.context.area.ui_type
+            bpy.context.area.ui_type = "UV"
             bpy.context.scene.tool_settings.use_uv_select_sync = False
             bpy.ops.uv.select_all(action='SELECT')
 
@@ -418,12 +423,11 @@ class PG_OT_set_tex_density(Operator):
             else:
                 scene.texToolsSettings.texel_density = float(scene.pg_tool.px_density) * context.scene.unit_settings.scale_length
             
-            old_type = bpy.context.area.type
-            bpy.context.area.type = "UV_EDITOR"
             bpy.ops.uv.textools_texel_density_set()
-            bpy.context.area.type = old_type
+            bpy.context.area.ui_type = old_type
             
             bpy.context.scene.tool_settings.use_uv_select_sync = sync
+            bpy.ops.object.mode_set_with_submode(mode=mod)
 
         else:
             self.report({'ERROR'}, "There is no texel density addon.")
@@ -600,8 +604,8 @@ class PG_OT_fix_import(Operator):
         #     armature.data.bones[tag].name += ' 1'        
 
         #go to Edit Mode
-        mod = context.object.mode
         armature.data.pose_position = 'REST' #FIXME: find universal matrix transformation for creation empties that parented to bones in pose position
+        mod = context.object.mode
         bpy.ops.object.mode_set_with_submode(mode='EDIT')
 
         #create a bone in the location and orientation of Armature parent
@@ -760,6 +764,7 @@ class PG_OT_combine_rigs(Operator):
                 avatar_arm_L = bone
               
         bpy.ops.object.mode_set_with_submode(mode='POSE')
+        avatar_rig.data.pose_position = 'POSE'
         for bone in avatar_rig.pose.bones:
             bone.bone.select = False
             
