@@ -123,7 +123,10 @@ class VIEW3D_PT_pg_rigging(Panel):
         
         col = layout.column(align=False)
 
-        col.operator("pg.add_bone")
+        row = col.row(align=True)
+        row.operator("pg.add_bone")
+        row.operator("pg.set_widget", text='', icon='FILE_3D')
+
         col.operator("pg.create_simple_controls")
         if active_bone and active_bone.get(context.active_pose_bone.name + "_space") is None:
             col.operator("pg.add_space_switching")

@@ -902,6 +902,70 @@ class PG_OT_add_bone(Operator):
         return {'FINISHED'}
 
 
+class PG_OT_set_widget(Operator):
+    """Creates a visual shape for the bone"""
+    bl_label = "Set a widget"
+    bl_idname = "pg.set_widget"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    wgt_type : EnumProperty(
+            name="Assign Widgets", 
+            items=[("none", "None", ""),
+                   ("cube", "Cube", ""), 
+                   ("sphere", "Sphere", ""), 
+                   ("square", "Square", ""), 
+                   ("circle", "Circle", "")], 
+            default="none")
+    wgt_size : FloatProperty(name= "Widget Size", min= 0, soft_max= 1000, default= 0.5, unit= "LENGTH")
+
+    @classmethod
+    def poll(cls, context):
+        if context.active_object == None or context.active_object.type != 'ARMATURE' :
+            return False
+        
+        if context.mode != 'POSE':
+            cls.poll_message_set("Should be in Pose Mode")
+            return False
+        
+        if len(bpy.context.selected_pose_bones) == 0:
+            cls.poll_message_set("Should be Selected Bones")
+            return False
+        
+        return True
+    
+    def invoke(self, context, event):
+        self.wgt_size = 0.5 / context.scene.unit_settings.scale_length
+        return context.window_manager.invoke_props_dialog(self)
+    
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = True
+        layout.prop(self, "wgt_type")
+        layout.prop(self, "wgt_size")
+
+    def execute(self, context):
+        armature_obj = context.active_object
+        armature = armature_obj.data
+        bones = bpy.context.selected_pose_bones
+        mod = context.object.mode
+
+        wgt_sc = self.wgt_size * context.scene.unit_settings.scale_length
+        wgt_scale = (wgt_sc, wgt_sc, wgt_sc)
+
+        for bone in bones:
+            print(bone.name)
+            if self.wgt_type == "none":
+                armature_obj.pose.bones[bone.name].custom_shape = None
+            else:
+                widget = get_widget(self.wgt_type, 1 / context.scene.unit_settings.scale_length)
+                armature_obj.pose.bones[bone.name].custom_shape = widget
+                armature_obj.pose.bones[bone.name].use_custom_shape_bone_size = False
+                armature_obj.pose.bones[bone.name].custom_shape_scale_xyz = wgt_scale
+        
+        return {'FINISHED'}
+
+
 #   Create simple controls
 class PG_OT_simple_controls(Operator):
     """Create control bones"""
@@ -1058,11 +1122,14 @@ class PG_OT_add_space_switching(Operator):
     def poll(cls, context):
         if context.active_object == None or context.active_object.type != 'ARMATURE' :
             return False
+        if not addon_installed("space_switcher"):
+            cls.poll_message_set("There're no Space Switcher addon found")
+            return False
         if context.mode != "POSE":
+            cls.poll_message_set("Should be in Pose Mode")
             return False
         if context.active_bone is None:
-            return False
-        if not addon_installed("space_switcher"):
+            cls.poll_message_set("Should be an Active Bone")
             return False
         return True
  
@@ -1264,6 +1331,7 @@ classes = (
     PG_OT_fix_import,
     PG_OT_combine_rigs,
     PG_OT_add_bone,
+    PG_OT_set_widget,
     PG_OT_simple_controls,
     PG_OT_add_space_switching,
     PG_OT_add_space,
