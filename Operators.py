@@ -1,6 +1,6 @@
 import bpy, mathutils
 from bpy.types import Operator, PropertyGroup
-from bpy.props import EnumProperty, BoolProperty, IntProperty, FloatProperty, StringProperty, BoolVectorProperty
+from bpy.props import EnumProperty, BoolProperty, IntProperty, FloatProperty, StringProperty, BoolVectorProperty, CollectionProperty
 from .Utils import *
 
 class PG_bone_spaces(PropertyGroup):
@@ -879,13 +879,13 @@ class PG_OT_add_bone(Operator):
 
     def invoke(self, context, event):
         self.length = 1 / context.scene.unit_settings.scale_length
-        return context.window_manager.invoke_props_dialog(self)
+        return self.execute(context)
 
     def execute(self, context):
         mod = context.object.mode
         arm = context.active_object.data
         bpy.ops.object.mode_set_with_submode(mode='EDIT')
-
+        
         mat =  context.active_object.matrix_world.inverted() @ context.scene.cursor.matrix
         mat = mathutils.Matrix().Translation(mat.translation)
 
@@ -896,7 +896,12 @@ class PG_OT_add_bone(Operator):
                           (0, 0, 0, 1)))
         
         bpy.ops.armature.select_all(action='DESELECT')
-        add_bone(arm, self.name, mat, self.length)
+        bone = add_bone(arm, self.name, mat, self.length)
+        if arm.collections.active == None:
+            col = arm.collections.new('Bones')
+            arm.collections.active = col
+            
+        arm.collections.active.assign(bone)
         bpy.ops.object.mode_set_with_submode(mode=mod)
 
         return {'FINISHED'}
@@ -972,8 +977,18 @@ class PG_OT_simple_controls(Operator):
     bl_label = "Create simple controls"
     bl_idname = "pg.create_simple_controls"
     bl_options = {'REGISTER', 'UNDO'}
+    
+    def dyn_col(self, context):
+        col = [('none', '*NONE*', ''), ('new', '*NEW*', '')]
+        for layer in context.object.data.collections.keys():
+            col.append((layer, layer, ''))
+        return col
 
     # ctrl_layer : BoolVectorProperty(name= "Layer", subtype= "LAYER", size= 32)
+    ctrl_layer : EnumProperty(
+        name="Bone Collections",
+        items=dyn_col)
+    
     prefix : StringProperty(name="Prefix", default="CTRL_")
     scale : FloatProperty(name="Scale", default=1.5, soft_min=0.1, soft_max=10)
     wgt_type : EnumProperty(
@@ -1040,8 +1055,14 @@ class PG_OT_simple_controls(Operator):
             
             bone_pair_names[bone.name] = ctrl_bone.name  #Solves issue if name already existed
     
-        # for bone in context.selected_bones: #FIXME Blender doesn't have bone layers
-        #     bone.layers = self.ctrl_layer
+            #assign to bone collection
+            if self.ctrl_layer == 'none':
+                pass
+            elif self.ctrl_layer == 'new':
+                col = armature.collections.new('CTRL')
+                armature.collections[col.name].assign(ctrl_bone)
+            else:
+                armature.collections[self.ctrl_layer].assign(ctrl_bone)
 
         # Relations
         for bone in def_bones:
