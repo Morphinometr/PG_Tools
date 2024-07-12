@@ -1040,6 +1040,11 @@ class PG_OT_simple_controls(Operator):
         for bone in context.selected_bones:
             def_bones.append(bone)
             
+        if self.ctrl_layer == 'new':
+            col_name = armature.collections.new('CTRL').name
+        elif self.ctrl_layer != 'none':
+            col_name = self.ctrl_layer
+        
         #Duplicate selected bones
         for bone in def_bones:
             if bone.name.startswith("MCH_"):
@@ -1057,12 +1062,8 @@ class PG_OT_simple_controls(Operator):
     
             #assign to bone collection
             if self.ctrl_layer == 'none':
-                pass
-            elif self.ctrl_layer == 'new':
-                col = armature.collections.new('CTRL')
-                armature.collections[col.name].assign(ctrl_bone)
-            else:
-                armature.collections[self.ctrl_layer].assign(ctrl_bone)
+                continue
+            armature.collections[col_name].assign(ctrl_bone)
 
         # Relations
         for bone in def_bones:
