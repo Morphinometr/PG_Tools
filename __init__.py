@@ -52,7 +52,7 @@ from bpy.types import (
 bl_info = {
     "name": "PG Tools",
     "author": "Kharkovschenko Konstantin",
-    "version": (0, 3, 0),
+    "version": (0, 3, 1),
     "blender": (4, 0, 0),
     "description": "PixelGun pipeline tools",
     "location": "Addons Preferences",
