@@ -564,7 +564,7 @@ class PG_OT_fix_import(Operator):
         meshes = []
         armature = None
         
-        #lookup for imported objects
+        # lookup for imported objects
         for name, id in collection.objects.items():
             if id.type == 'EMPTY':
                 empties.append(id)
@@ -577,7 +577,7 @@ class PG_OT_fix_import(Operator):
             self.report({'ERROR'}, 'Armature not found')
             return {'CANCELLED'}
         
-        #delete keyframes from armature object
+        # delete keyframes from armature object
         try:
             for f in range(int(armature.animation_data.action.frame_range[0]), int(armature.animation_data.action.frame_range[1]+1)):
                 armature.keyframe_delete('location', frame=f)
@@ -592,48 +592,36 @@ class PG_OT_fix_import(Operator):
         
         tag = scene.pg_tool.weapon_tag
         
-        #create trash collection
+        # create trash collection
         trash_col = get_collection("Trashcan")
         trash_lcol = get_layer_collection("Trashcan")
         trash_lcol.exclude = True
               
         context.view_layer.objects.active = armature  #Set armature as Active Object
         
-        #If there was two bones with the same name exporter adds " 1" to the second one witch would be tag
-        # if armature.data.bones.find(tag) == 0:
-        #     armature.data.bones[tag].name += ' 1'        
-
-        #go to Edit Mode
+        # go to Edit Mode
         armature.data.pose_position = 'REST' #FIXME: find universal matrix transformation for creation empties that parented to bones in pose position
         mod = context.object.mode
         bpy.ops.object.mode_set_with_submode(mode='EDIT')
 
-        #create a bone in the location and orientation of Armature parent
+        # create a bone in the location and orientation of Armature parent
         if armature.parent != None:
             tag_bone = add_bone(armature=armature.data,
                                 name=tag,
                                 transform=armature.parent.matrix_world,
                                 length=0.1/context.scene.unit_settings.scale_length)
-    
-        #If there was two bones with the same name exporter adds " 1" to the second one witch would be tag
-        #upd: not always. it's better to handle manually
-        # elif armature.data.bones.find(tag) == 0:
-        #     tag_bone = armature.data.bones[tag]
-        #     new_tag = tag + " 1"
-        #     scene.pg_tool.weapon_tag = tag_bone.name = new_tag
         
-        #parent all bones without parent to newly created bone
-        for name, id in armature.data.bones.items():
-            if id.name == tag:
-                continue
-            if id.parent == None:
-                armature.data.edit_bones[name].parent = tag_bone
+            # parent all bones without parent to newly created bone
+            for name, id in armature.data.bones.items():
+                if id.name == tag:
+                    continue
+                if id.parent == None:
+                    armature.data.edit_bones[name].parent = tag_bone
         
-        #merge imported empties
+        # merge imported empties
         if self.merge_empties:
             for empty in empties:
                 if empty.parent == None:
-                    #print('no parent')
                     continue
                 
                 new_bone = add_bone(armature=armature.data, 
@@ -645,21 +633,21 @@ class PG_OT_fix_import(Operator):
         
         armature.data.pose_position = 'POSE'
 
-        #exit Edit Mode
+        # exit Edit Mode
         bpy.ops.object.mode_set_with_submode(mode=mod)
 
-        #clear parenting and keep location
+        # clear parenting and keep location
         parent = armature.parent
         matrix = armature.matrix_world
         armature.parent = None
         armature.matrix_world = matrix
         
-        #move to trash collection
+        # move to trash collection
         for ob in empties:
             trash_col.objects.link(ob)
             collection.objects.unlink(ob)
         
-        #empties.remove(parent) #remove solved empty from the list
+        # empties.remove(parent) #remove solved empty from the list
        
         # Group animation bone channels
         action_name = armature.name + "_import"
