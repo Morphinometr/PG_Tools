@@ -22,7 +22,7 @@ better_import = {
         "use_reset_mesh_rotation" : False,
         "use_edge_crease" : True,
         "my_edge_crease_scale" : 1.0,
-        "my_edge_smoothing" : 'FBXSDK',
+        "my_edge_smoothing" : 'Import',
         "use_detect_deform_bone" : False,
         "use_import_materials" : True,
         "use_rename_by_filename" : False,
