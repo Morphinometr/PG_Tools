@@ -634,6 +634,11 @@ class PG_OT_fix_import(Operator):
                                     length=0.1/context.scene.unit_settings.scale_length)
 
                 new_bone.parent = armature.data.edit_bones[empty.parent_bone]
+
+        # Assing all bones to collection
+        col = armature.data.collections.new('Deform')
+        for bone in armature.data.edit_bones:
+            col.assign(bone)
         
         armature.data.pose_position = 'POSE'
 
@@ -990,7 +995,7 @@ class PG_OT_simple_controls(Operator):
                    ("sphere", "Sphere", ""), 
                    ("square", "Square", ""), 
                    ("circle", "Circle", "")], 
-            default="none")
+            default="cube")
     wgt_size : FloatProperty(name= "Widget Size", min= 0, soft_max= 1000, default= 0.5, unit= "LENGTH")
     match_transform : BoolProperty(name = "Match Transform", description = "Move Control bones to Deformation bones in World Space", default = True )
     
