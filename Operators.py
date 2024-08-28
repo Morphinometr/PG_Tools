@@ -604,6 +604,10 @@ class PG_OT_fix_import(Operator):
         mod = context.object.mode
         bpy.ops.object.mode_set_with_submode(mode='EDIT')
 
+        # all imported bones have to be deformers
+        for bone in armature.data.edit_bones:
+            bone.use_deform = True
+
         # create a bone in the location and orientation of Armature parent
         if armature.parent != None:
             tag_bone = add_bone(armature=armature.data,
