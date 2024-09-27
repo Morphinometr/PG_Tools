@@ -639,6 +639,8 @@ class PG_OT_fix_import(Operator):
         col = armature.data.collections.new('Deform')
         for bone in armature.data.edit_bones:
             col.assign(bone)
+            bone.length = max(bone.length, 0.1/context.scene.unit_settings.scale_length)
+
         
         armature.data.pose_position = 'POSE'
 
@@ -718,10 +720,10 @@ class PG_OT_combine_rigs(Operator):
         weapon_rig_children = weapon_rig.children
         
         # move_bones_to_layer(weapon_rig.data.bones, layer = 10) #FIXME
-        weap_bone_col = "Weapon deform"
-        weapon_rig.data.collections.new(weap_bone_col)
-        for bone in weapon_rig.data.bones.values():
-            weapon_rig.data.collections[weap_bone_col].assign(bone)
+        # weap_bone_col = "Weapon deform"
+        # weapon_rig.data.collections.new(weap_bone_col)
+        # for bone in weapon_rig.data.bones.values():
+        #     weapon_rig.data.collections[weap_bone_col].assign(bone)
 
         # Pining weapon mesh to avatar rig
         weapon_mesh = arms_mesh = None
