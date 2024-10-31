@@ -487,7 +487,44 @@ class PG_OT_import_weapon(Operator):
 
         return {'FINISHED'}
 
-class PG_OT_import_avatar(Operator):
+
+from bpy_extras.io_utils import ImportHelper 
+from bpy.types import FileSelectParams
+import os
+from bpy import ops
+class OT_TestOpenFilebrowser(Operator, ImportHelper):
+    bl_idname = "test.open_filebrowser" 
+    bl_label = "Select" 
+
+    params : FileSelectParams
+
+    filter_search = StringProperty(
+        default="*.fbx",
+        options={'HIDDEN'},
+        maxlen=255,  # Max internal buffer length, longer would be clamped.
+    )
+
+    filename_ext = ".fbx"
+
+    filter_glob: StringProperty(
+        default="*.fbx",
+        options={'HIDDEN'},
+        maxlen=255,  # Max internal buffer length, longer would be clamped.
+    )
+
+    def __init__(self, params):
+        self.params = params
+        super().__init__()
+
+    def execute(self, context):
+        filename, extension = os.path.splitext(self.filepath)
+        print('Selected:', self.filepath)
+        print('File name:', filename)
+        print('File extension:', extension)
+        
+        return {'FINISHED'}
+
+class PG_OT_import_avatar(Operator,):
     """Import Avatar by its Tag"""
     bl_label = "Import Avatar"
     bl_idname = "pg.import_avatar"
@@ -505,35 +542,43 @@ class PG_OT_import_avatar(Operator):
         self.avatar_tag = context.scene.pg_tool.avatar_tag
                     
         return self.execute(context)
-
+    
     def execute(self, context):
-        collection = get_collection("Avatar")         
-        layer_collection = get_layer_collection(collection.name)
-        bpy.context.view_layer.active_layer_collection = layer_collection
+        par = {'filter_search': 'a'}
+        bpy.ops.test.open_filebrowser('INVOKE_DEFAULT').params=par
+        # collection = get_collection("Avatar")         
+        # layer_collection = get_layer_collection(collection.name)
+        # bpy.context.view_layer.active_layer_collection = layer_collection
         
-        addon = context.preferences.addons[get_addon_fullname(context, "PG_Tools")]
+        # addon = context.preferences.addons[get_addon_fullname(context, "PG_Tools")]
         
-        project_path = addon.preferences['project_filepath']
-        weapon_path = project_path + "\\Assets\\Sources\\battle_royale\\Models\\" + self.avatar_tag + ".fbx"
+        # project_path = addon.preferences['project_filepath']
+        # weapon_path = project_path + "\\Assets\\Sources\\battle_royale\\Models\\" + self.avatar_tag + ".fbx"
 
-        textures_paths = []
-        textures_paths.append(project_path + "\\Assets\\Sources\\battle_royale\\Textures")
-        textures_paths.append(project_path + "\\Assets\\Resources\\WeaponSkinsV2\\WeaponSkinAssets\\Share4skins")
+        # textures_paths = []
+        # textures_paths.append(project_path + "\\Assets\\Sources\\battle_royale\\Textures")
+        # textures_paths.append(project_path + "\\Assets\\Resources\\WeaponSkinsV2\\WeaponSkinAssets\\Share4skins")
         
-        from .pg_tools_settings import better_import        
-        bpy.ops.better_import.fbx(filepath=weapon_path, **better_import["pg_default"])
+        # from .pg_tools_settings import better_import        
+        # # bpy.ops.better_import.fbx(filepath=weapon_path, **better_import["pg_default"])
+        # bpy.ops.better_import.fbx("INVOKE_DEFAULT", filepath=weapon_path, **better_import["pg_default"] )
+        # context.view_layer.update()
+        # params = bpy.data.screens['temp'].areas[0].spaces.active.params
+
+        # params.filter_search = self.avatar_tag
+        # print("pass")
         
-        for path in textures_paths:
-            bpy.ops.file.find_missing_files(directory=path)
+        # for path in textures_paths:
+        #     bpy.ops.file.find_missing_files(directory=path)
 
-        if self.pixelize:
-            texture_pixel_filter(context)
-        if self.fix_materials:
-            flatten_materials(context)
+        # if self.pixelize:
+        #     texture_pixel_filter(context)
+        # if self.fix_materials:
+        #     flatten_materials(context)
 
-        context.scene.pg_tool.avatar_tag = self.avatar_tag
+        # context.scene.pg_tool.avatar_tag = self.avatar_tag
 
-        return {'FINISHED'}
+        return {"FINISHED"}
         
 # Solve some bugs of Better FBX importer
 class PG_OT_fix_import(Operator):
@@ -1361,7 +1406,7 @@ classes = (
     PG_OT_trim_timeline_to_strips,
 
     PG_OT_test,
-        
+    OT_TestOpenFilebrowser
     )        
                 
 def register():
