@@ -33,7 +33,7 @@ class VIEW3D_PT_pg_layout(Panel):
         layout.operator("pg.import_weapon")
         layout.operator("pg.fix_import")
 
-        if not addon_installed('space_view3d_copy_attributes'):
+        if not addon_installed('copy_attributes'):
             layout.label(text='Please enable "Interface: Copy Attributes Menu" addon to automatically rotate avatar arms to match weapon arms', icon = 'ERROR')
         layout.operator("pg.combine_rigs")
 

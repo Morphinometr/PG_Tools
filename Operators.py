@@ -393,9 +393,13 @@ class PG_OT_set_tex_density(Operator):
             pg_tool.tex_size_custom_x = pg_tool.tex_size_custom_y = int(self.size)
 
         if addon_installed("Texel_Density"):
-            scene.td.units = '1'
-            scene.td.texture_size = '4'
-            scene.td.set_method = '0'
+            scene.td.units = '1' # 'px/m'
+            if bpy.app.version < (4,2,0):
+                scene.td.texture_size = '4'
+                scene.td.set_method = '0'
+            else:
+                scene.td.texture_size = 'CUSTOM'
+                scene.td.set_method = 'EACH'
 
             scene.td.custom_width = str(scene.pg_tool.tex_size_custom_x)
             scene.td.custom_height = str(scene.pg_tool.tex_size_custom_y)

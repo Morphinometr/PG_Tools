@@ -92,7 +92,8 @@ def create_mat(name):
 def addon_installed(name):
     addons = bpy.context.preferences.addons.keys()
     for ad in addons:
-        if ad.find(name) > -1:
+        ad = ad.lower()
+        if ad.find(name.lower()) > -1:
             return True
     return False
 
