@@ -1146,8 +1146,9 @@ class PG_OT_add_space_switching(Operator):
     @classmethod
     def poll(cls, context):
         if context.active_object == None or context.active_object.type != 'ARMATURE' :
+            cls.poll_message_set("Should be an Active Armature")
             return False
-        if not addon_installed("space_switcher"):
+        if not any((addon_installed("space_switcher"), addon_installed("mrig"))):
             cls.poll_message_set("There're no Space Switcher addon found")
             return False
         if context.mode != "POSE":
