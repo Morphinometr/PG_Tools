@@ -27,6 +27,8 @@ class PG_properties(PropertyGroup):
         items = [('10', '10 px/m', ''),
                  ('16', '16 px/m', ''),
                  ('32', '32 px/m', ''),
+                 ('64', '64 px/m', ''),
+                 ('128', '128 px/m', ''),
                  ('1000', '1000 px/m', ''),
                  ('custom', 'Custom', ''),
                 ],
