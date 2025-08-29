@@ -150,6 +150,7 @@ class VIEW3D_PT_dev_panel(Panel):
         col = layout.column(align=False)
         col.label(text="Dev")
         
+        col.popover(panel="VIEW3D_PT_slots_projectpaint", icon="IMAGE")
 
 #   Registration
 
@@ -157,7 +158,7 @@ classes = (
     VIEW3D_PT_pg_modeling,
     VIEW3D_PT_pg_layout,
     VIEW3D_PT_pg_rigging,
-    #VIEW3D_PT_dev_panel,
+    VIEW3D_PT_dev_panel,
 
 )
 

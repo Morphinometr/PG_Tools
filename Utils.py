@@ -71,11 +71,11 @@ def create_mat(name):
     test_mat.use_nodes = True
     test_mat.use_fake_user = True
     principled_node = test_mat.node_tree.nodes.get('Principled BSDF')
-    principled_node.inputs[12].default_value = 0 # specular
+    principled_node.inputs['Specular IOR Level'].default_value = 0
 
     #test texture
     test_image_node = test_mat.node_tree.nodes.new("ShaderNodeTexImage")
-    test_image_node.location = (-350, 100)
+    test_image_node.location = (-550, 100)
         
     link  = test_mat.node_tree.links.new
     link(test_image_node.outputs[0], principled_node.inputs[0])
@@ -84,7 +84,7 @@ def create_mat(name):
     #bake texture
     bake_image_node = test_mat.node_tree.nodes.new("ShaderNodeTexImage")
     bake_image_node.name = bake_image_node.label = "Bake"
-    bake_image_node.location = (-350, 400)
+    bake_image_node.location = (-550, 400)
     bake_image_node.interpolation = 'Closest'
 
     return test_mat
