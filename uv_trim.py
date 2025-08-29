@@ -14,7 +14,7 @@ cur_mode = mod = bpy.context.object.mode
 old_image = Vector((64, 64))
 new_image = Vector((32, 64))
 
-scale = Vector(x / y for x, y in zip(old_image, new_image, ))
+scale = Vector(x / y for x, y in zip(old_image, new_image))
 anchor = corners['LEFT_UP']
 
 
