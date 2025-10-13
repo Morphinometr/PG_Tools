@@ -1256,7 +1256,9 @@ class PG_OT_add_space_switching(Operator):
             var.targets[0].id = context.active_object
             var.targets[0].data_path = datapath
             drv.driver.expression = "parent_space == %d" % (num + 1) 
-    
+
+        # space switcher working only with local location
+        active_bone.bone.use_local_location = True
         
         return {"FINISHED"}
     
