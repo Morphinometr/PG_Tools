@@ -1302,6 +1302,7 @@ class PG_OT_add_space_switching(Operator):
         col = arm.collections_all.get('MCH')
         if col is None:
             col = arm.collections.new('MCH')
+            col.is_visible = False
 
         col.assign(parent)
         arm.edit_bones.active = edit_bone
