@@ -1181,25 +1181,11 @@ class PG_OT_add_space_switching(Operator):
     def execute(self, context):
         own_armature = context.active_object
         active_bone = context.active_pose_bone
+        parent_bone = active_bone.parent
         prop_name = active_bone.name + "_space"
 
         if len(context.active_pose_bone.spaces) == 0:
-            del active_bone["spaces"]
-            if active_bone.get(prop_name) is not None:
-                del active_bone[prop_name]
-            
-            switches = own_armature.data.space_switcher.space_switches
-            if switches.get(prop_name):
-                index = switches[prop_name].index
-                switches.remove(index)
-            
-            constrain = active_bone.constraints.get(prop_name)
-            if constrain:
-                self.clear_constrain(constrain)
-                active_bone.constraints.remove(constrain)
-            return {"FINISHED"}
-        
-        
+            self.clear_spaces(own_armature, active_bone, prop_name)
         
         con_spaces = []
         con_armatures = []
@@ -1228,7 +1214,7 @@ class PG_OT_add_space_switching(Operator):
             switcher = own_armature.data.space_switcher.space_switches.add()
             switcher.name = prop_name
         
-        datapath = 'pose.bones["%s"]["%s"]' % (active_bone.name, prop_name)
+        datapath = f'pose.bones["{active_bone.name}"]["{prop_name}"]'
         switcher.property_datapath = datapath
         switcher.space_switch_type = "ENUM"
 
@@ -1241,9 +1227,13 @@ class PG_OT_add_space_switching(Operator):
             sp = switcher.enum_type_properties.spaces.add()
             sp.name = space
 
-        constrain = context.active_pose_bone.constraints.get(prop_name)
+        #add parent bone with contraint
+        if parent_bone is None:
+            parent_bone = self.create_parent(own_armature, active_bone)
+
+        constrain = parent_bone.constraints.get(prop_name)
         if not constrain:
-            constrain = active_bone.constraints.new(type = "ARMATURE")
+            constrain = parent_bone.constraints.new(type = "ARMATURE")
             constrain.name = prop_name
         
         self.clear_constrain(constrain)
@@ -1270,6 +1260,53 @@ class PG_OT_add_space_switching(Operator):
             target.driver_remove("weight")
         constrain.targets.clear()
     
+
+    def clear_spaces(self, own_armature, active_bone, prop_name):
+        del active_bone["spaces"]
+        if active_bone.get(prop_name) is not None:
+            del active_bone[prop_name]
+        
+        switches = own_armature.data.space_switcher.space_switches
+        if switches.get(prop_name):
+            index = switches[prop_name].index
+            switches.remove(index)
+        
+        constrain = active_bone.parent.constraints.get(prop_name)
+        if constrain:
+            self.clear_constrain(constrain)
+            active_bone.parent.constraints.remove(constrain)
+        return {"FINISHED"}
+
+
+    def create_parent(self, object, bone):
+        mod = object.mode
+        arm = object.data
+
+        if bone.name.startswith("CTRL"):
+            name = "MCH" + bone.name[4:]
+        else:
+            name = "MCH_" + bone.name
+
+        bpy.ops.object.mode_set_with_submode(mode='EDIT')
+        edit_bone = arm.edit_bones.get(bone.name)
+        
+        bpy.ops.armature.select_all(action='DESELECT')
+        parent = add_bone(arm, name, edit_bone.matrix, edit_bone.length * 0.8)
+        name = parent.name
+               
+        col = arm.collections_all.get('MCH')
+        if col is None:
+            col = arm.collections.new('MCH')
+
+        col.assign(parent)
+        arm.edit_bones.active = edit_bone
+        edit_bone.parent = parent
+
+        bpy.ops.object.mode_set_with_submode(mode=mod)
+
+        return object.pose.bones.get(name)
+
+
 #   Animation
 
 class PG_OT_regroup_fcurves(Operator):

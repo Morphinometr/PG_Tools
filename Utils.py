@@ -49,13 +49,15 @@ def get_widget(type: str, size : float):
         widgets_col.objects.link(widget)
     return widget
 
-def add_bone(armature : Armature, name : str, transform : Matrix, length : float):
+def add_bone(armature : Armature, name : str, transform : Matrix, length : float, select = True):
     bone = armature.edit_bones.new(name)
     vec = Vector((0,1,0))
     bone.tail = bone.head + vec * length
     bone.matrix = transform.copy()
-    bone.select = bone.select_head = bone.select_tail = True
-    armature.edit_bones.active = bone
+    if select:
+        bone.select = bone.select_head = bone.select_tail = True
+        armature.edit_bones.active = bone
+    
     return bone
 
 def move_bones_to_layer(bones, layer : int):
