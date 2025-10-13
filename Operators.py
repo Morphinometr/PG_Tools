@@ -1228,8 +1228,13 @@ class PG_OT_add_space_switching(Operator):
             sp.name = space
 
         #add parent bone with contraint
-        if parent_bone is None:
+        if parent_bone is None or parent_bone.name == "controllers":
             parent_bone = self.create_parent(own_armature, active_bone)
+
+        old_con = active_bone.constraints.get(prop_name)
+        if old_con:
+            self.clear_constrain(old_con)
+            active_bone.constraints.remove(old_con)
 
         constrain = parent_bone.constraints.get(prop_name)
         if not constrain:
@@ -1291,7 +1296,7 @@ class PG_OT_add_space_switching(Operator):
         edit_bone = arm.edit_bones.get(bone.name)
         
         bpy.ops.armature.select_all(action='DESELECT')
-        parent = add_bone(arm, name, edit_bone.matrix, edit_bone.length * 0.8)
+        parent = add_bone(arm, name, edit_bone.matrix, edit_bone.length * 0.8, False)
         name = parent.name
                
         col = arm.collections_all.get('MCH')
