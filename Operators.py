@@ -1232,7 +1232,7 @@ class PG_OT_add_space_switching(Operator):
         if parent_bone is None or parent_bone.name == "controllers":
             parent_bone = self.create_parent(own_armature, active_bone)
             parent_bone.bone.use_deform = False
-        else:
+        elif parent_bone.constraints.get("SWITCH_PARENT") is None and parent_bone.constraints.get(prop_name) is None:
             self.report({'WARNING'}, f'Parent bone exists ("{active_bone.parent.name}"). Please make sure that it is not supposed to move or remove parent from active bone.')
 
         old_con = active_bone.constraints.get(prop_name)
