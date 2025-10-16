@@ -36,7 +36,6 @@ else:
     from . import properties
 
 import bpy
-import os
 from bpy.props import (
     BoolProperty,
     PointerProperty,
@@ -52,7 +51,7 @@ from bpy.types import (
 bl_info = {
     "name": "PG Tools",
     "author": "Kharkovschenko Konstantin",
-    "version": (0, 3, 2),
+    "version": (0, 3, 3),
     "blender": (4, 0, 0),
     "description": "PixelGun pipeline tools",
     "location": "Addons Preferences",
