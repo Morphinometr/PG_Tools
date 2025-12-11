@@ -1353,16 +1353,21 @@ class PG_OT_trim_timeline_to_strips(Operator):
         return True
 
     def execute(self, context):
+        if bpy.app.version < (5, 0, 0):
+            strips = context.selected_sequences
+        else:
+            strips = context.selected_editable_strips
+        
         if self.trim_start:
             start_frame = 0
         else:
-            start_frame = context.selected_sequences[0].frame_start
-            for strip in context.selected_sequences:
+            start_frame = strips[0].frame_start
+            for strip in strips:
                 start_frame = min(strip.frame_start, start_frame)
         
 
         end_frame = 1
-        for strip in context.selected_sequences:
+        for strip in strips:
             strip.frame_start = start_frame
             
             end_frame = max(strip.frame_final_duration - 1, end_frame)
