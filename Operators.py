@@ -411,7 +411,11 @@ class PG_OT_set_tex_density(Operator):
             else:
                 scene.td.density_set = scene.pg_tool.px_density
             
-            bpy.ops.texel_density.set()
+            if bpy.app.version < (5,0,0):
+                bpy.ops.texel_density.set()
+            else:
+                bpy.ops.object.texel_density_set()
+
         
         elif addon_installed("TexTools"):
             sync = bpy.context.scene.tool_settings.use_uv_select_sync
